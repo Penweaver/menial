@@ -1117,7 +1117,115 @@ export const ApiService = {
     return Array.from(createdJobsStore.values())
       .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
   },
+
+  // Worker Account Standardization & Lifecycle (§22, §44, §80)
+  getWorkerPersonalDetails(workerId: string = 'worker_adebayo'): WorkerPersonalDetails {
+    const worker = SEED_WORKERS.find((w) => w.id === workerId);
+    return {
+      fullName: worker?.fullName || 'Adebayo Ogunlesi',
+      phone: '+234 803 333 4444',
+      bio: worker?.bio || 'Dependable facility care technician. Specialized in deep cleaning, floor scrubbing, post-construction cleanup, and rapid residential service.',
+      locationName: worker?.locationName || 'Lekki Phase 1, Lagos',
+      emergencyContactName: 'Bolanle Ogunlesi',
+      emergencyContactPhone: '+234 802 111 2222',
+      avatarUrl: worker?.avatarUrl ?? undefined,
+    };
+  },
+
+  async updateWorkerPersonalDetails(
+    workerId: string = 'worker_adebayo',
+    details: Partial<WorkerPersonalDetails>
+  ): Promise<{ success: boolean; error?: string }> {
+    const worker = SEED_WORKERS.find((w) => w.id === workerId);
+    if (worker) {
+      if (details.fullName) worker.fullName = details.fullName;
+      if (details.bio) worker.bio = details.bio;
+      if (details.locationName) worker.locationName = details.locationName;
+    }
+    return { success: true };
+  },
+
+  getWorkerReputation(workerId: string = 'worker_adebayo'): WorkerReputation {
+    const worker = SEED_WORKERS.find((w) => w.id === workerId) || SEED_WORKERS[0];
+    return {
+      ratingAvg: worker.ratingAvg || 4.9,
+      completedJobsCount: worker.completedJobsCount || 42,
+      onTimeArrivalPercent: 98,
+      reliabilityScore: 99,
+      ratingsBreakdown: {
+        fiveStar: 38,
+        fourStar: 4,
+        threeStar: 0,
+        twoStar: 0,
+        oneStar: 0,
+      },
+      reviews: worker.reviews || [],
+    };
+  },
+
+  async deleteWorkerAccount(
+    workerId: string = 'worker_adebayo',
+    reason?: string
+  ): Promise<{ success: boolean; error?: string }> {
+    // 1. Check for active uncompleted job (§32)
+    const activeJob = ApiService.getActiveJob();
+    if (activeJob && !['completed', 'cancelled', 'expired'].includes(activeJob.status)) {
+      return {
+        success: false,
+        error: 'Cannot delete account with an active job in progress. Please complete or resolve your ongoing assignment first.',
+      };
+    }
+
+    // 2. Check for pending escrow funds (§44)
+    const earnings = ApiService.getWorkerEarningsSummary(workerId);
+    if (earnings.pendingEscrowKobo > 0) {
+      return {
+        success: false,
+        error: 'You have pending escrow funds in progress. Please resolve or withdraw them before deleting your account.',
+      };
+    }
+
+    // 3. Remove worker from discovery pool (NDPA Erasure §80)
+    const index = SEED_WORKERS.findIndex((w) => w.id === workerId);
+    if (index !== -1) {
+      SEED_WORKERS.splice(index, 1);
+    }
+    workerProfilesStore.delete(workerId);
+
+    return { success: true };
+  },
 };
+
+export interface WorkerPersonalDetails {
+  fullName: string;
+  phone: string;
+  bio: string;
+  locationName: string;
+  emergencyContactName: string;
+  emergencyContactPhone: string;
+  avatarUrl?: string | null;
+}
+
+export interface WorkerReputation {
+  ratingAvg: number;
+  completedJobsCount: number;
+  onTimeArrivalPercent: number;
+  reliabilityScore: number;
+  ratingsBreakdown: {
+    fiveStar: number;
+    fourStar: number;
+    threeStar: number;
+    twoStar: number;
+    oneStar: number;
+  };
+  reviews: Array<{
+    id: string;
+    author: string;
+    rating: number;
+    date: string;
+    comment: string;
+  }>;
+}
 
 export const apiService = ApiService;
 

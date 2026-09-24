@@ -57,9 +57,12 @@ export type WorkerTabParamList = {
 export type WorkerProfileStackParamList = {
   ProfileHome: undefined;
   ProfileSetup: undefined;
+  PersonalDetails: undefined;
+  Reputation: undefined;
   NINVerification: undefined;
   VerificationStatus: undefined;
   PayoutSettings: undefined;
   Preferences: undefined;
   Support: undefined;
+  DeleteAccount: undefined;
 };

@@ -39,6 +39,7 @@ interface AuthContextType {
     accountType?: UserAccountType
   ) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
+  deleteAccount: (reason?: string) => Promise<{ success: boolean; error?: string }>;
   formatPhoneNumber: (raw: string) => string;
 }
 
@@ -312,6 +313,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setActiveRole(null);
   }, []);
 
+  const deleteAccount = useCallback(
+    async (reason?: string): Promise<{ success: boolean; error?: string }> => {
+      try {
+        const userId = session?.userId || 'worker_adebayo';
+        const res = await ApiService.deleteWorkerAccount(userId, reason);
+        if (!res.success) {
+          return res;
+        }
+        await logout();
+        return { success: true };
+      } catch (err: any) {
+        return { success: false, error: err.message || 'Account deletion failed.' };
+      }
+    },
+    [session, logout]
+  );
+
   return (
     <AuthContext.Provider
       value={{
@@ -327,6 +345,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loginWithEmail,
         registerWithEmail,
         logout,
+        deleteAccount,
         formatPhoneNumber,
       }}
     >

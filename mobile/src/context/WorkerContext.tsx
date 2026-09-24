@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { ApiService, ServiceCategory } from '../services/api';
+import { ApiService, ServiceCategory, WorkerPersonalDetails } from '../services/api';
 import { useAuth } from './AuthContext';
 import type { VerificationStatus } from '@shared/types/enums';
 
@@ -41,6 +41,7 @@ interface WorkerContextType {
   categories: ServiceCategory[];
   payoutBank: WorkerPayoutBankState | null;
   settings: WorkerSettingsState;
+  personalDetails: WorkerPersonalDetails;
   isLoading: boolean;
   saveProfile: (params: {
     bio: string;
@@ -59,6 +60,7 @@ interface WorkerContextType {
     accountNumber: string;
     accountName: string;
   }) => Promise<{ success: boolean; error?: string }>;
+  updatePersonalDetails: (details: Partial<WorkerPersonalDetails>) => Promise<{ success: boolean; error?: string }>;
   updateSettings: (newSettings: Partial<WorkerSettingsState>) => Promise<void>;
   refreshStatus: () => void;
 }
@@ -215,6 +217,31 @@ export const WorkerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     []
   );
 
+  const [personalDetails, setPersonalDetails] = useState<WorkerPersonalDetails>(() =>
+    ApiService.getWorkerPersonalDetails(userId)
+  );
+
+  const updatePersonalDetails = useCallback(
+    async (details: Partial<WorkerPersonalDetails>): Promise<{ success: boolean; error?: string }> => {
+      try {
+        setIsLoading(true);
+        const res = await ApiService.updateWorkerPersonalDetails(userId, details);
+        if (res.success) {
+          setPersonalDetails((prev) => ({
+            ...prev,
+            ...details,
+          }));
+        }
+        return res;
+      } catch (err: any) {
+        return { success: false, error: err.message || 'Failed to update personal details' };
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [userId]
+  );
+
   const updateSettings = useCallback(
     async (newSettings: Partial<WorkerSettingsState>): Promise<void> => {
       setSettings((prev) => ({
@@ -233,10 +260,12 @@ export const WorkerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         categories,
         payoutBank,
         settings,
+        personalDetails,
         isLoading,
         saveProfile,
         submitVerification,
         saveBankDetails,
+        updatePersonalDetails,
         updateSettings,
         refreshStatus,
       }}

@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Modal } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator, NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Colors, Typography, Spacing, Radii, formatKoboToNaira } from '../constants/theme';
@@ -20,6 +20,9 @@ import { WorkerJobHistoryScreen } from '../screens/worker/wallet/WorkerJobHistor
 import { WorkerPayoutSettingsScreen } from '../screens/worker/settings/WorkerPayoutSettingsScreen';
 import { WorkerPreferencesScreen } from '../screens/worker/settings/WorkerPreferencesScreen';
 import { WorkerSupportScreen } from '../screens/worker/settings/WorkerSupportScreen';
+import { WorkerPersonalDetailsScreen } from '../screens/worker/settings/WorkerPersonalDetailsScreen';
+import { WorkerReputationScreen } from '../screens/worker/settings/WorkerReputationScreen';
+import { WorkerDeleteAccountScreen } from '../screens/worker/settings/WorkerDeleteAccountScreen';
 
 const Tab = createBottomTabNavigator<WorkerTabParamList>();
 const Stack = createNativeStackNavigator<WorkerProfileStackParamList>();
@@ -30,11 +33,21 @@ type ProfileHomeScreenProps = {
 
 const WorkerProfileHomeScreen: React.FC<ProfileHomeScreenProps> = ({ navigation }) => {
   const { session, selectRole, logout } = useAuth();
-  const { profile, verification, categories, payoutBank, settings, updateSettings } = useWorker();
+  const { profile, verification, categories, payoutBank, settings, personalDetails, updateSettings } = useWorker();
+
+  const [logoutModalVisible, setLogoutModalVisible] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   const activeCategories = categories.filter((c) =>
     profile.categoryIds.includes(c.id)
   );
+
+  const handleConfirmLogout = async () => {
+    setLoggingOut(true);
+    await logout();
+    setLoggingOut(false);
+    setLogoutModalVisible(false);
+  };
 
   return (
     <View style={styles.screen}>
@@ -45,8 +58,9 @@ const WorkerProfileHomeScreen: React.FC<ProfileHomeScreenProps> = ({ navigation 
           <View style={styles.avatarCircle}>
             <Text style={styles.avatarText}>👷</Text>
           </View>
-          <Text style={styles.profileName}>Verified Professional Worker</Text>
-          <Text style={styles.profilePhone}>{session?.phone || '+234 803 333 4444'}</Text>
+          <Text style={styles.profileName}>{personalDetails.fullName || 'Verified Professional Worker'}</Text>
+          <Text style={styles.profilePhone}>{personalDetails.phone || session?.phone || '+234 803 333 4444'}</Text>
+          <Text style={styles.profileLocation}>📍 {personalDetails.locationName || 'Lekki Phase 1, Lagos'}</Text>
           
           <View style={styles.ratingAndBadgeRow}>
             <Badge
@@ -65,7 +79,9 @@ const WorkerProfileHomeScreen: React.FC<ProfileHomeScreenProps> = ({ navigation 
                   : 'neutral'
               }
             />
-            <Badge label="★ 4.9 (42 jobs)" type="rating" />
+            <TouchableOpacity onPress={() => navigation.navigate('Reputation')} activeOpacity={0.8}>
+              <Badge label="★ 4.9 (42 jobs)" type="rating" />
+            </TouchableOpacity>
           </View>
 
           {/* Quick Availability Switch in Header */}
@@ -95,7 +111,28 @@ const WorkerProfileHomeScreen: React.FC<ProfileHomeScreenProps> = ({ navigation 
           </View>
         </View>
 
-        {/* 1. Identity & Government Verification Card */}
+        {/* 1. Account & Profile Section */}
+        <Text style={styles.sectionHeader}>ACCOUNT &amp; PROFILE</Text>
+        <Card
+          style={styles.menuCard}
+          onPress={() => navigation.navigate('PersonalDetails')}
+        >
+          <View style={styles.menuCardRow}>
+            <Text style={styles.menuIcon}>👤</Text>
+            <View style={styles.menuTextGroup}>
+              <View style={styles.menuTitleRow}>
+                <Text style={styles.menuTitle}>Personal Details &amp; Bio</Text>
+                <Text style={styles.editActionText}>Manage</Text>
+              </View>
+              <Text style={styles.menuDesc}>
+                Legal name, coverage area, bio, emergency contact
+              </Text>
+            </View>
+            <Text style={styles.chevron}>→</Text>
+          </View>
+        </Card>
+
+        {/* Identity & Government Verification Card */}
         <Card
           style={styles.menuCard}
           onPress={() => {
@@ -111,10 +148,16 @@ const WorkerProfileHomeScreen: React.FC<ProfileHomeScreenProps> = ({ navigation 
               {verification.status === 'verified' ? '🛡️' : '📋'}
             </Text>
             <View style={styles.menuTextGroup}>
-              <Text style={styles.menuTitle}>Identity &amp; NIN Verification</Text>
+              <View style={styles.menuTitleRow}>
+                <Text style={styles.menuTitle}>Identity &amp; NIN Verification</Text>
+                <Badge
+                  label={verification.status === 'verified' ? 'VERIFIED' : 'ACTION REQ'}
+                  type={verification.status === 'verified' ? 'verified' : 'neutral'}
+                />
+              </View>
               <Text style={styles.menuDesc}>
                 {verification.status === 'verified'
-                  ? 'NIMC Verified • NDPA masked (Section 80)'
+                  ? 'NIMC Verified • NDPA masked token (Section 80)'
                   : 'Submit National Identity Number to unlock jobs'}
               </Text>
             </View>
@@ -122,7 +165,7 @@ const WorkerProfileHomeScreen: React.FC<ProfileHomeScreenProps> = ({ navigation 
           </View>
         </Card>
 
-        {/* 2. Work Profile, Trades & Rates */}
+        {/* Work Profile, Trades & Rates */}
         <Card
           style={styles.menuCard}
           onPress={() => navigation.navigate('ProfileSetup')}
@@ -154,7 +197,8 @@ const WorkerProfileHomeScreen: React.FC<ProfileHomeScreenProps> = ({ navigation 
           </View>
         </Card>
 
-        {/* 3. Bank Account & Payouts (NIP Transfer) */}
+        {/* 2. Payments & Performance Section */}
+        <Text style={styles.sectionHeader}>PAYMENTS &amp; PERFORMANCE</Text>
         <Card
           style={styles.menuCard}
           onPress={() => navigation.navigate('PayoutSettings')}
@@ -176,7 +220,27 @@ const WorkerProfileHomeScreen: React.FC<ProfileHomeScreenProps> = ({ navigation 
           </View>
         </Card>
 
-        {/* 4. App & Job Preferences */}
+        <Card
+          style={styles.menuCard}
+          onPress={() => navigation.navigate('Reputation')}
+        >
+          <View style={styles.menuCardRow}>
+            <Text style={styles.menuIcon}>⭐</Text>
+            <View style={styles.menuTextGroup}>
+              <View style={styles.menuTitleRow}>
+                <Text style={styles.menuTitle}>Reputation &amp; Ratings</Text>
+                <Badge label="TOP RATED" type="rating" />
+              </View>
+              <Text style={styles.menuDesc}>
+                4.9 ★ overall rating • 98% on-time arrival • Client feedback
+              </Text>
+            </View>
+            <Text style={styles.chevron}>→</Text>
+          </View>
+        </Card>
+
+        {/* 3. Preferences & Support Section */}
+        <Text style={styles.sectionHeader}>PREFERENCES &amp; SUPPORT</Text>
         <Card
           style={styles.menuCard}
           onPress={() => navigation.navigate('Preferences')}
@@ -186,14 +250,13 @@ const WorkerProfileHomeScreen: React.FC<ProfileHomeScreenProps> = ({ navigation 
             <View style={styles.menuTextGroup}>
               <Text style={styles.menuTitle}>Work &amp; App Preferences</Text>
               <Text style={styles.menuDesc}>
-                Push alerts, SMS notification backup, biometric app lock
+                Push alerts, SMS notifications, biometric app lock
               </Text>
             </View>
             <Text style={styles.chevron}>→</Text>
           </View>
         </Card>
 
-        {/* 5. Safety, 24/7 Helpline & NDPA Legal */}
         <Card
           style={styles.menuCard}
           onPress={() => navigation.navigate('Support')}
@@ -203,16 +266,17 @@ const WorkerProfileHomeScreen: React.FC<ProfileHomeScreenProps> = ({ navigation 
             <View style={styles.menuTextGroup}>
               <Text style={styles.menuTitle}>Safety, Support &amp; Legal</Text>
               <Text style={styles.menuDesc}>
-                24/7 Lagos Ops Center (0800-MENIAL-NG), NDPA privacy rights
+                24/7 Lagos Ops Center (0800-MENIAL-NG), NDPA data download
               </Text>
             </View>
             <Text style={styles.chevron}>→</Text>
           </View>
         </Card>
 
-        {/* Role Switching */}
+        {/* 4. Danger Zone & Account Management Section */}
+        <Text style={styles.sectionHeader}>ACCOUNT MANAGEMENT &amp; SECURITY</Text>
         <View style={styles.actionCard}>
-          <Text style={styles.actionTitle}>Role Management</Text>
+          <Text style={styles.actionTitle}>Role Switching</Text>
           <Text style={styles.actionDesc}>
             Need to hire workers for your own home or project?
           </Text>
@@ -224,17 +288,66 @@ const WorkerProfileHomeScreen: React.FC<ProfileHomeScreenProps> = ({ navigation 
           />
         </View>
 
-        {/* Sign Out */}
-        <Button
-          title="Sign Out"
-          variant="danger"
-          onPress={logout}
-          style={styles.logoutButton}
-        />
+        <View style={styles.dangerZoneCard}>
+          <Text style={styles.dangerTitle}>Session &amp; Account Operations</Text>
+          <Text style={styles.dangerDesc}>
+            Sign out of your active session or request permanent account deletion under NDPA 2023 §80.
+          </Text>
+
+          <Button
+            title="Sign Out"
+            variant="outline"
+            onPress={() => setLogoutModalVisible(true)}
+            style={styles.signOutBtn}
+          />
+
+          <Button
+            title="Delete Account"
+            variant="danger"
+            onPress={() => navigation.navigate('DeleteAccount')}
+            style={styles.deleteAccountBtn}
+          />
+        </View>
 
         {/* Clean Standardized Screen Footer */}
         <ScreenFooter variant="compact" />
       </ScrollView>
+
+      {/* Standardized Logout Confirmation Modal */}
+      <Modal
+        visible={logoutModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLogoutModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <Card style={styles.logoutModalCard}>
+            <View style={styles.logoutIconCircle}>
+              <Text style={styles.logoutEmoji}>🚪</Text>
+            </View>
+            <Text style={styles.logoutTitle}>Log Out of Menial?</Text>
+            <Text style={styles.logoutMessage}>
+              You will go offline and will not receive nearby dispatch alerts until you sign back in. Your 4.9 ★ rating, work profile, and linked bank details are safely preserved.
+            </Text>
+
+            <Button
+              title={loggingOut ? 'Signing out...' : 'Confirm Log Out'}
+              variant="danger"
+              onPress={handleConfirmLogout}
+              loading={loggingOut}
+              style={styles.modalLogoutBtn}
+            />
+
+            <Button
+              title="Cancel"
+              variant="outline"
+              onPress={() => setLogoutModalVisible(false)}
+              disabled={loggingOut}
+              style={styles.modalCancelBtn}
+            />
+          </Card>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -243,6 +356,7 @@ const WorkerProfileStackNavigator: React.FC = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="ProfileHome" component={WorkerProfileHomeScreen} />
+      <Stack.Screen name="PersonalDetails" component={WorkerPersonalDetailsScreen} />
       <Stack.Screen name="ProfileSetup">
         {({ navigation }) => (
           <WorkerProfileSetupScreen
@@ -251,6 +365,7 @@ const WorkerProfileStackNavigator: React.FC = () => {
           />
         )}
       </Stack.Screen>
+      <Stack.Screen name="Reputation" component={WorkerReputationScreen} />
       <Stack.Screen name="NINVerification">
         {({ navigation }) => (
           <WorkerVerificationScreen
@@ -270,6 +385,7 @@ const WorkerProfileStackNavigator: React.FC = () => {
       <Stack.Screen name="PayoutSettings" component={WorkerPayoutSettingsScreen} />
       <Stack.Screen name="Preferences" component={WorkerPreferencesScreen} />
       <Stack.Screen name="Support" component={WorkerSupportScreen} />
+      <Stack.Screen name="DeleteAccount" component={WorkerDeleteAccountScreen} />
     </Stack.Navigator>
   );
 };
@@ -470,7 +586,7 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     borderWidth: 1,
     borderColor: Colors.border,
-    marginTop: Spacing.sm,
+    marginTop: Spacing.xs,
     marginBottom: Spacing.md,
   },
   actionTitle: {
@@ -488,7 +604,96 @@ const styles = StyleSheet.create({
   switchButton: {
     height: 48,
   },
-  logoutButton: {
+  dangerZoneCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: Radii.lg,
+    padding: Spacing.lg,
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    marginTop: Spacing.xs,
     marginBottom: Spacing.xl,
+    gap: Spacing.sm,
+  },
+  dangerTitle: {
+    ...Typography.scale.labelLg,
+    color: Colors.dangerText,
+    fontWeight: '800',
+    fontSize: 15,
+  },
+  dangerDesc: {
+    ...Typography.scale.bodySm,
+    color: Colors.textSecondary,
+    fontSize: 12,
+    lineHeight: 18,
+    marginBottom: Spacing.xs,
+  },
+  signOutBtn: {
+    borderColor: Colors.border,
+  },
+  deleteAccountBtn: {
+    marginTop: 2,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.65)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: Spacing.xl,
+  },
+  logoutModalCard: {
+    width: '100%',
+    maxWidth: 380,
+    padding: Spacing.xl,
+    alignItems: 'center',
+    borderRadius: Radii.xl,
+  },
+  logoutIconCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: Colors.dangerContainer,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: Spacing.md,
+  },
+  logoutEmoji: {
+    fontSize: 28,
+  },
+  logoutTitle: {
+    ...Typography.scale.headlineSm,
+    color: Colors.textPrimary,
+    fontWeight: '800',
+    textAlign: 'center',
+    marginBottom: Spacing.xs,
+  },
+  logoutMessage: {
+    ...Typography.scale.bodySm,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    fontSize: 13,
+    lineHeight: 20,
+    marginBottom: Spacing.lg,
+  },
+  modalLogoutBtn: {
+    width: '100%',
+    marginBottom: Spacing.sm,
+  },
+  modalCancelBtn: {
+    width: '100%',
+  },
+  sectionHeader: {
+    ...Typography.scale.labelSm,
+    color: Colors.textMuted,
+    fontSize: 10,
+    letterSpacing: 0.8,
+    fontWeight: '700',
+    marginBottom: Spacing.xs,
+    marginTop: Spacing.md,
+  },
+  profileLocation: {
+    ...Typography.scale.bodySm,
+    color: Colors.textMuted,
+    fontSize: 11,
+    marginTop: 2,
   },
 });
