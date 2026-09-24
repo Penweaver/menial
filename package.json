@@ -1,0 +1,43 @@
+{
+  "name": "menial",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Menial — On-Demand Worker Marketplace",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test:phase2": "tsx tests/admin-authority.test.ts",
+    "test:phase3": "tsx tests/marketplace-users.test.ts",
+    "test:phase4": "tsx tests/marketplace-jobs.test.ts",
+    "test:phase5": "tsx tests/marketplace-transactions.test.ts",
+    "test:phase6": "tsx tests/marketplace-execution.test.ts",
+    "test:phase7": "tsx tests/marketplace-trust-safety.test.ts",
+    "test:phase8": "tsx tests/admin-operations.test.ts",
+    "test:phase9": "tsx tests/superadmin-governance.test.ts",
+    "test:e2e": "tsx tests/e2e-marketplace-flow.test.ts",
+    "test:security": "tsx tests/security-review-section89.test.ts",
+    "test:admin-auth": "tsx tests/admin-app-auth.test.ts",
+    "test:admin-nav": "tsx tests/admin-nav-permissions.test.ts",
+    "test:slice8a": "tsx tests/admin-slice8a.test.ts",
+    "test:slice8b": "tsx tests/admin-slice8b.test.ts",
+    "test:slice8c": "tsx tests/admin-slice8c.test.ts",
+    "test:slice9": "tsx tests/admin-slice9.test.ts",
+    "test:mobile": "tsx tests/mobile-slice1.test.ts && tsx tests/mobile-slice2.test.ts && tsx tests/mobile-slice3.test.ts && tsx tests/mobile-slice4.test.ts && tsx tests/mobile-slice5.test.ts && tsx tests/mobile-slice6.test.ts",
+    "test": "tsx tests/admin-authority.test.ts && tsx tests/marketplace-users.test.ts && tsx tests/marketplace-jobs.test.ts && tsx tests/marketplace-transactions.test.ts && tsx tests/marketplace-execution.test.ts && tsx tests/marketplace-trust-safety.test.ts && tsx tests/admin-operations.test.ts && tsx tests/superadmin-governance.test.ts && tsx tests/admin-app-auth.test.ts && tsx tests/admin-nav-permissions.test.ts && tsx tests/admin-slice8a.test.ts && tsx tests/admin-slice8b.test.ts && tsx tests/admin-slice8c.test.ts && tsx tests/admin-slice9.test.ts && tsx tests/mobile-slice1.test.ts && tsx tests/mobile-slice2.test.ts && tsx tests/mobile-slice3.test.ts && tsx tests/mobile-slice4.test.ts && tsx tests/mobile-slice5.test.ts && tsx tests/mobile-slice6.test.ts && tsx tests/e2e-marketplace-flow.test.ts && tsx tests/security-review-section89.test.ts",
+    "init:superadmin": "tsx scripts/init-superadmin.ts",
+    "mobile:start": "npm --prefix mobile start",
+    "mobile:typecheck": "npm --prefix mobile run typecheck",
+    "admin:dev": "npm --prefix admin run dev",
+    "admin:typecheck": "npm --prefix admin run typecheck",
+    "admin:build": "npm --prefix admin run build",
+    "typecheck:all": "npm run typecheck && npm run mobile:typecheck && npm run admin:typecheck"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.1",
+    "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  }
+}
