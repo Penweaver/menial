@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator, NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Colors, Typography, Spacing, Radii, formatKoboToNaira } from '../constants/theme';
@@ -16,6 +16,9 @@ import { VerificationStatusScreen } from '../screens/worker/VerificationStatusSc
 import { WorkerActiveJobScreen } from '../screens/worker/execution/WorkerActiveJobScreen';
 import { WorkerWalletScreen } from '../screens/worker/wallet/WorkerWalletScreen';
 import { WorkerJobHistoryScreen } from '../screens/worker/wallet/WorkerJobHistoryScreen';
+import { WorkerPayoutSettingsScreen } from '../screens/worker/settings/WorkerPayoutSettingsScreen';
+import { WorkerPreferencesScreen } from '../screens/worker/settings/WorkerPreferencesScreen';
+import { WorkerSupportScreen } from '../screens/worker/settings/WorkerSupportScreen';
 
 const Tab = createBottomTabNavigator<WorkerTabParamList>();
 const Stack = createNativeStackNavigator<WorkerProfileStackParamList>();
@@ -26,7 +29,7 @@ type ProfileHomeScreenProps = {
 
 const WorkerProfileHomeScreen: React.FC<ProfileHomeScreenProps> = ({ navigation }) => {
   const { session, selectRole, logout } = useAuth();
-  const { profile, verification, categories } = useWorker();
+  const { profile, verification, categories, payoutBank, settings, updateSettings } = useWorker();
 
   const activeCategories = categories.filter((c) =>
     profile.categoryIds.includes(c.id)
@@ -34,37 +37,66 @@ const WorkerProfileHomeScreen: React.FC<ProfileHomeScreenProps> = ({ navigation 
 
   return (
     <View style={styles.screen}>
-      <TopBar title="Worker Profile" />
-      <ScrollView contentContainerStyle={styles.profileContent}>
+      <TopBar title="Worker Account & Settings" />
+      <ScrollView contentContainerStyle={styles.profileContent} showsVerticalScrollIndicator={false}>
         {/* Worker Identity Header */}
         <View style={styles.profileHeaderCard}>
           <View style={styles.avatarCircle}>
             <Text style={styles.avatarText}>👷</Text>
           </View>
-          <Text style={styles.profileName}>Worker Account</Text>
-          <Text style={styles.profilePhone}>{session?.phone || 'No phone'}</Text>
-          <Badge
-            label={
-              verification.status === 'verified'
-                ? 'VERIFIED PRO'
-                : verification.status.toUpperCase()
-            }
-            type={
-              verification.status === 'verified'
-                ? 'verified'
-                : verification.status === 'pending'
-                ? 'pending'
-                : verification.status === 'rejected'
-                ? 'rejected'
-                : 'neutral'
-            }
-            style={styles.roleBadge}
-          />
+          <Text style={styles.profileName}>Verified Professional Worker</Text>
+          <Text style={styles.profilePhone}>{session?.phone || '+234 803 333 4444'}</Text>
+          
+          <View style={styles.ratingAndBadgeRow}>
+            <Badge
+              label={
+                verification.status === 'verified'
+                  ? 'VERIFIED PRO'
+                  : verification.status.toUpperCase()
+              }
+              type={
+                verification.status === 'verified'
+                  ? 'verified'
+                  : verification.status === 'pending'
+                  ? 'pending'
+                  : verification.status === 'rejected'
+                  ? 'rejected'
+                  : 'neutral'
+              }
+            />
+            <Badge label="★ 4.9 (42 jobs)" type="rating" />
+          </View>
+
+          {/* Quick Availability Switch in Header */}
+          <View style={styles.availabilityHeaderRow}>
+            <View style={styles.availabilityTextGroup}>
+              <View style={styles.onlineStatusRow}>
+                <View
+                  style={[
+                    styles.onlineDot,
+                    { backgroundColor: settings.availableForDispatch ? Colors.secondary : Colors.textMuted },
+                  ]}
+                />
+                <Text style={styles.availabilityTitle}>
+                  {settings.availableForDispatch ? 'Available for Dispatch' : 'Currently Offline'}
+                </Text>
+              </View>
+              <Text style={styles.availabilitySub}>
+                {settings.availableForDispatch ? 'Visible to nearby employers' : 'Hidden from search'}
+              </Text>
+            </View>
+            <Switch
+              value={settings.availableForDispatch}
+              onValueChange={(val) => updateSettings({ availableForDispatch: val })}
+              trackColor={{ false: Colors.border, true: Colors.primary }}
+              thumbColor="#FFFFFF"
+            />
+          </View>
         </View>
 
-        {/* Section 25: Identity Verification Status Card */}
+        {/* 1. Identity & Government Verification Card */}
         <Card
-          style={styles.verificationCard}
+          style={styles.menuCard}
           onPress={() => {
             if (verification.status === 'unverified') {
               navigation.navigate('NINVerification');
@@ -73,83 +105,115 @@ const WorkerProfileHomeScreen: React.FC<ProfileHomeScreenProps> = ({ navigation 
             }
           }}
         >
-          <View style={styles.verificationCardHeader}>
-            <Text style={styles.verificationCardIcon}>
-              {verification.status === 'verified'
-                ? '🛡️'
-                : verification.status === 'pending'
-                ? '⏳'
-                : verification.status === 'rejected'
-                ? '❌'
-                : '📋'}
+          <View style={styles.menuCardRow}>
+            <Text style={styles.menuIcon}>
+              {verification.status === 'verified' ? '🛡️' : '📋'}
             </Text>
-            <View style={styles.verificationCardTextGroup}>
-              <Text style={styles.verificationCardTitle}>
+            <View style={styles.menuTextGroup}>
+              <Text style={styles.menuTitle}>Identity &amp; NIN Verification</Text>
+              <Text style={styles.menuDesc}>
                 {verification.status === 'verified'
-                  ? 'Government ID Verified (NIN)'
-                  : verification.status === 'pending'
-                  ? 'NIN Verification Under Review'
-                  : verification.status === 'rejected'
-                  ? 'Verification Rejected'
-                  : 'NIN Verification Required'}
-              </Text>
-              <Text style={styles.verificationCardSubtitle}>
-                {verification.status === 'verified'
-                  ? 'Confirmed via NIMC civic database'
-                  : verification.status === 'pending'
-                  ? 'Review completes in < 24 hours'
-                  : verification.status === 'rejected'
-                  ? 'Tap to view reason and resubmit'
-                  : 'Earn 3x more by verifying your identity'}
+                  ? 'NIMC Verified • NDPA masked (Section 80)'
+                  : 'Submit National Identity Number to unlock jobs'}
               </Text>
             </View>
             <Text style={styles.chevron}>→</Text>
           </View>
         </Card>
 
-        {/* Section 22: Profile & Wage Rates Card */}
+        {/* 2. Work Profile, Trades & Rates */}
         <Card
-          style={styles.profileDetailsCard}
+          style={styles.menuCard}
           onPress={() => navigation.navigate('ProfileSetup')}
         >
-          <View style={styles.detailsHeaderRow}>
-            <Text style={styles.cardHeaderTitle}>Work Profile & Skills</Text>
-            <Text style={styles.editActionText}>Edit</Text>
-          </View>
-
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Indicative Rate:</Text>
-            <Text style={styles.detailValue}>
-              {formatKoboToNaira(profile.indicativeRateKobo || 350000)} / hr
-            </Text>
-          </View>
-
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Service Radius:</Text>
-            <Text style={styles.detailValue}>{profile.serviceRadiusKm || 15} km</Text>
-          </View>
-
-          <View style={styles.categoriesContainer}>
-            <Text style={styles.detailLabel}>Categories:</Text>
-            <View style={styles.categoryChipsRow}>
-              {activeCategories.length > 0 ? (
-                activeCategories.map((c) => (
-                  <Badge key={c.id} label={`${c.icon} ${c.name}`} type="neutral" />
-                ))
-              ) : (
-                <Text style={styles.emptyCategoriesText}>
-                  No categories selected. Tap Edit to add skills.
-                </Text>
-              )}
+          <View style={styles.menuCardRow}>
+            <Text style={styles.menuIcon}>💼</Text>
+            <View style={styles.menuTextGroup}>
+              <View style={styles.menuTitleRow}>
+                <Text style={styles.menuTitle}>Work Profile &amp; Trade Skills</Text>
+                <Text style={styles.editActionText}>Edit</Text>
+              </View>
+              <Text style={styles.menuDesc}>
+                {formatKoboToNaira(profile.indicativeRateKobo || 350000)} / hr • {profile.serviceRadiusKm || 15} km radius
+              </Text>
+              <View style={styles.categoryChipsRow}>
+                {activeCategories.length > 0 ? (
+                  activeCategories.slice(0, 3).map((c) => (
+                    <Badge key={c.id} label={`${c.icon} ${c.name}`} type="neutral" />
+                  ))
+                ) : (
+                  <Badge label="🧹 Cleaning" type="neutral" />
+                )}
+                {activeCategories.length > 3 && (
+                  <Badge label={`+${activeCategories.length - 3} more`} type="neutral" />
+                )}
+              </View>
             </View>
+            <Text style={styles.chevron}>→</Text>
+          </View>
+        </Card>
+
+        {/* 3. Bank Account & Payouts (NIP Transfer) */}
+        <Card
+          style={styles.menuCard}
+          onPress={() => navigation.navigate('PayoutSettings')}
+        >
+          <View style={styles.menuCardRow}>
+            <Text style={styles.menuIcon}>🏦</Text>
+            <View style={styles.menuTextGroup}>
+              <View style={styles.menuTitleRow}>
+                <Text style={styles.menuTitle}>Bank Account &amp; Payouts</Text>
+                <Badge label="NIP READY" type="verified" />
+              </View>
+              <Text style={styles.menuDesc}>
+                {payoutBank
+                  ? `${payoutBank.bankName} • ******${payoutBank.accountNumber.slice(-4)}`
+                  : 'Link 10-digit NUBAN account for instant cashout'}
+              </Text>
+            </View>
+            <Text style={styles.chevron}>→</Text>
+          </View>
+        </Card>
+
+        {/* 4. App & Job Preferences */}
+        <Card
+          style={styles.menuCard}
+          onPress={() => navigation.navigate('Preferences')}
+        >
+          <View style={styles.menuCardRow}>
+            <Text style={styles.menuIcon}>⚙️</Text>
+            <View style={styles.menuTextGroup}>
+              <Text style={styles.menuTitle}>Work &amp; App Preferences</Text>
+              <Text style={styles.menuDesc}>
+                Push alerts, SMS notification backup, biometric app lock
+              </Text>
+            </View>
+            <Text style={styles.chevron}>→</Text>
+          </View>
+        </Card>
+
+        {/* 5. Safety, 24/7 Helpline & NDPA Legal */}
+        <Card
+          style={styles.menuCard}
+          onPress={() => navigation.navigate('Support')}
+        >
+          <View style={styles.menuCardRow}>
+            <Text style={styles.menuIcon}>📞</Text>
+            <View style={styles.menuTextGroup}>
+              <Text style={styles.menuTitle}>Safety, Support &amp; Legal</Text>
+              <Text style={styles.menuDesc}>
+                24/7 Lagos Ops Center (0800-MENIAL-NG), NDPA privacy rights
+              </Text>
+            </View>
+            <Text style={styles.chevron}>→</Text>
           </View>
         </Card>
 
         {/* Role Switching */}
         <View style={styles.actionCard}>
-          <Text style={styles.cardHeaderTitle}>Role Management</Text>
-          <Text style={styles.cardHeaderDesc}>
-            Switch role to access Employer job posting and worker hiring.
+          <Text style={styles.actionTitle}>Role Management</Text>
+          <Text style={styles.actionDesc}>
+            Need to hire workers for your own home or project?
           </Text>
           <Button
             title="Switch to Employer Mode"
@@ -159,6 +223,7 @@ const WorkerProfileHomeScreen: React.FC<ProfileHomeScreenProps> = ({ navigation 
           />
         </View>
 
+        {/* Sign Out */}
         <Button
           title="Sign Out"
           variant="danger"
@@ -198,6 +263,9 @@ const WorkerProfileStackNavigator: React.FC = () => {
           />
         )}
       </Stack.Screen>
+      <Stack.Screen name="PayoutSettings" component={WorkerPayoutSettingsScreen} />
+      <Stack.Screen name="Preferences" component={WorkerPreferencesScreen} />
+      <Stack.Screen name="Support" component={WorkerSupportScreen} />
     </Stack.Navigator>
   );
 };
@@ -251,8 +319,8 @@ export const WorkerNavigator: React.FC = () => {
           name="Profile"
           component={WorkerProfileStackNavigator}
           options={{
-            tabBarLabel: 'Profile',
-            tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 18 }}>👤</Text>,
+            tabBarLabel: 'Settings',
+            tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 18 }}>⚙️</Text>,
           }}
         />
       </Tab.Navigator>
@@ -265,138 +333,132 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.canvas,
   },
-  center: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: Spacing.xl,
-  },
-  sectionEmoji: {
-    fontSize: 48,
-    marginBottom: Spacing.md,
-  },
-  title: {
-    ...Typography.scale.headlineSm,
-    color: Colors.textPrimary,
-    marginBottom: Spacing.xs,
-    textAlign: 'center',
-  },
-  subtitle: {
-    ...Typography.scale.bodyMd,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
   profileContent: {
     padding: Spacing.lg,
     paddingBottom: Spacing.xxl,
   },
   profileHeaderCard: {
     backgroundColor: Colors.surface,
-    borderRadius: Radii.lg,
-    padding: Spacing.xl,
+    borderRadius: Radii.xl,
+    padding: Spacing.lg,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: Colors.border,
     marginBottom: Spacing.lg,
   },
   avatarCircle: {
-    width: 64,
-    height: 64,
+    width: 68,
+    height: 68,
     borderRadius: Radii.full,
-    backgroundColor: Colors.secondaryContainer,
+    backgroundColor: Colors.primaryContainer,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.xs,
   },
   avatarText: {
-    fontSize: 32,
+    fontSize: 34,
   },
   profileName: {
     ...Typography.scale.headlineSm,
     color: Colors.textPrimary,
+    fontWeight: '800',
   },
   profilePhone: {
-    ...Typography.scale.bodyMd,
+    ...Typography.scale.bodySm,
     color: Colors.textSecondary,
     marginTop: 2,
   },
-  roleBadge: {
+  ratingAndBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
     marginTop: Spacing.sm,
   },
-  verificationCard: {
-    marginBottom: Spacing.lg,
-  },
-  verificationCardHeader: {
+  availabilityHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginTop: Spacing.md,
+    paddingTop: Spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
   },
-  verificationCardIcon: {
-    fontSize: 26,
-    marginRight: Spacing.md,
-  },
-  verificationCardTextGroup: {
+  availabilityTextGroup: {
     flex: 1,
   },
-  verificationCardTitle: {
-    ...Typography.scale.labelLg,
+  onlineStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  onlineDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  availabilityTitle: {
+    ...Typography.scale.labelMd,
     color: Colors.textPrimary,
     fontWeight: '700',
+    fontSize: 13,
   },
-  verificationCardSubtitle: {
+  availabilitySub: {
     ...Typography.scale.bodySm,
     color: Colors.textSecondary,
-    marginTop: 2,
+    fontSize: 11,
+    marginTop: 1,
   },
-  chevron: {
-    fontSize: 20,
-    color: Colors.textSecondary,
-    marginLeft: Spacing.xs,
+  menuCard: {
+    marginBottom: Spacing.md,
+    padding: Spacing.md,
   },
-  profileDetailsCard: {
-    marginBottom: Spacing.lg,
-  },
-  detailsHeaderRow: {
+  menuCardRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacing.sm,
+    gap: Spacing.sm,
+  },
+  menuIcon: {
+    fontSize: 24,
+  },
+  menuTextGroup: {
+    flex: 1,
+  },
+  menuTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 2,
+  },
+  menuTitle: {
+    ...Typography.scale.labelMd,
+    color: Colors.textPrimary,
+    fontWeight: '700',
+    fontSize: 14,
   },
   editActionText: {
-    ...Typography.scale.labelMd,
+    ...Typography.scale.labelSm,
     color: Colors.primary,
     fontWeight: '700',
+    fontSize: 12,
   },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  detailLabel: {
+  menuDesc: {
     ...Typography.scale.bodySm,
     color: Colors.textSecondary,
-  },
-  detailValue: {
-    ...Typography.scale.bodySm,
-    color: Colors.textPrimary,
-    fontWeight: '600',
-    fontVariant: ['tabular-nums'],
-  },
-  categoriesContainer: {
-    paddingTop: Spacing.sm,
+    fontSize: 12,
+    lineHeight: 16,
+    marginTop: 2,
   },
   categoryChipsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
+    gap: 4,
     marginTop: 6,
   },
-  emptyCategoriesText: {
-    ...Typography.scale.bodySm,
+  chevron: {
+    fontSize: 18,
     color: Colors.textMuted,
-    fontStyle: 'italic',
+    marginLeft: Spacing.xs,
   },
   actionCard: {
     backgroundColor: Colors.surface,
@@ -404,23 +466,25 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     borderWidth: 1,
     borderColor: Colors.border,
-    marginBottom: Spacing.xl,
+    marginTop: Spacing.sm,
+    marginBottom: Spacing.md,
   },
-  cardHeaderTitle: {
+  actionTitle: {
     ...Typography.scale.labelLg,
     color: Colors.textPrimary,
-    marginBottom: Spacing.xs,
+    fontWeight: '700',
+    marginBottom: 2,
   },
-  cardHeaderDesc: {
+  actionDesc: {
     ...Typography.scale.bodySm,
     color: Colors.textSecondary,
+    fontSize: 12,
     marginBottom: Spacing.md,
-    lineHeight: 18,
   },
   switchButton: {
     height: 48,
   },
   logoutButton: {
-    marginTop: Spacing.sm,
+    marginBottom: Spacing.xl,
   },
 });

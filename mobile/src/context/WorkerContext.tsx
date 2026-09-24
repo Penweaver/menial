@@ -20,10 +20,27 @@ export interface WorkerVerificationState {
   submittedAt?: string;
 }
 
+export interface WorkerPayoutBankState {
+  bankCode: string;
+  bankName: string;
+  accountNumber: string;
+  accountName: string;
+  isVerified: boolean;
+}
+
+export interface WorkerSettingsState {
+  availableForDispatch: boolean;
+  pushAlerts: boolean;
+  smsAlerts: boolean;
+  biometricAuth: boolean;
+}
+
 interface WorkerContextType {
   profile: WorkerProfileState;
   verification: WorkerVerificationState;
   categories: ServiceCategory[];
+  payoutBank: WorkerPayoutBankState | null;
+  settings: WorkerSettingsState;
   isLoading: boolean;
   saveProfile: (params: {
     bio: string;
@@ -36,6 +53,13 @@ interface WorkerContextType {
     idNumber: string;
     documentUrl?: string;
   }) => Promise<{ success: boolean; error?: string }>;
+  saveBankDetails: (details: {
+    bankCode: string;
+    bankName: string;
+    accountNumber: string;
+    accountName: string;
+  }) => Promise<{ success: boolean; error?: string }>;
+  updateSettings: (newSettings: Partial<WorkerSettingsState>) => Promise<void>;
   refreshStatus: () => void;
 }
 
@@ -150,15 +174,70 @@ export const WorkerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     [userId]
   );
 
+  const [payoutBank, setPayoutBank] = useState<WorkerPayoutBankState | null>({
+    bankCode: '044',
+    bankName: 'Access Bank',
+    accountNumber: '0123456789',
+    accountName: 'VERIFIED WORKER HOLDER',
+    isVerified: true,
+  });
+
+  const [settings, setSettings] = useState<WorkerSettingsState>({
+    availableForDispatch: true,
+    pushAlerts: true,
+    smsAlerts: true,
+    biometricAuth: false,
+  });
+
+  const saveBankDetails = useCallback(
+    async (details: {
+      bankCode: string;
+      bankName: string;
+      accountNumber: string;
+      accountName: string;
+    }): Promise<{ success: boolean; error?: string }> => {
+      try {
+        setIsLoading(true);
+        if (details.accountNumber.length !== 10) {
+          return { success: false, error: 'Account number must be exactly 10 digits.' };
+        }
+        setPayoutBank({
+          ...details,
+          isVerified: true,
+        });
+        return { success: true };
+      } catch (err: any) {
+        return { success: false, error: err.message || 'Failed to link bank account' };
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    []
+  );
+
+  const updateSettings = useCallback(
+    async (newSettings: Partial<WorkerSettingsState>): Promise<void> => {
+      setSettings((prev) => ({
+        ...prev,
+        ...newSettings,
+      }));
+    },
+    []
+  );
+
   return (
     <WorkerContext.Provider
       value={{
         profile,
         verification,
         categories,
+        payoutBank,
+        settings,
         isLoading,
         saveProfile,
         submitVerification,
+        saveBankDetails,
+        updateSettings,
         refreshStatus,
       }}
     >

@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   ScrollView,
   Image,
-  ActivityIndicator,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Colors, Typography, Spacing, Radii } from '../../constants/theme';
@@ -40,12 +39,11 @@ export const RegistrationScreen: React.FC<RegistrationScreenProps> = ({ navigati
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [agreedToTerms, setAgreedToTerms] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState<'google' | 'facebook' | 'linkedin' | null>(null);
 
-  // Phone OTP Registration Flow
+  // Phone OTP Flow
   const handleRegisterPhone = async () => {
     setError(null);
     if (!fullName.trim()) {
@@ -55,12 +53,7 @@ export const RegistrationScreen: React.FC<RegistrationScreenProps> = ({ navigati
 
     const cleaned = phone.replace(/\D/g, '');
     if (cleaned.length < 10 || cleaned.length > 11) {
-      setError('Please enter a valid 10 or 11-digit Nigerian phone number.');
-      return;
-    }
-
-    if (!agreedToTerms) {
-      setError('You must agree to the Terms of Service & Privacy Policy.');
+      setError('Please enter a valid 10 or 11-digit phone number.');
       return;
     }
 
@@ -73,13 +66,14 @@ export const RegistrationScreen: React.FC<RegistrationScreenProps> = ({ navigati
       navigation.navigate('Verification', {
         phone: formatted,
         isRegistration: true,
+        role: selectedRole,
       });
     } else {
       setError(result.error || 'Failed to dispatch verification code.');
     }
   };
 
-  // Email Registration Flow
+  // Email Flow
   const handleRegisterEmail = async () => {
     setError(null);
     if (!fullName.trim()) {
@@ -91,11 +85,7 @@ export const RegistrationScreen: React.FC<RegistrationScreenProps> = ({ navigati
       return;
     }
     if (!password || password.length < 6) {
-      setError('Password must be at least 6 characters long.');
-      return;
-    }
-    if (!agreedToTerms) {
-      setError('You must agree to the Terms of Service & Privacy Policy.');
+      setError('Password must be at least 6 characters.');
       return;
     }
 
@@ -108,7 +98,7 @@ export const RegistrationScreen: React.FC<RegistrationScreenProps> = ({ navigati
     }
   };
 
-  // Social Sign Up Flow
+  // Social Auth Flow (Icon-only)
   const handleSocialSignUp = async (provider: 'google' | 'facebook' | 'linkedin') => {
     setError(null);
     setSocialLoading(provider);
@@ -116,168 +106,71 @@ export const RegistrationScreen: React.FC<RegistrationScreenProps> = ({ navigati
     setSocialLoading(null);
 
     if (!result.success) {
-      setError(result.error || `Unable to complete ${provider} registration.`);
+      setError(result.error || `Unable to register with ${provider}.`);
     }
-  };
-
-  const getLockoutRemainingMinutes = () => {
-    if (!rateLimitState.lockoutUntil) return 0;
-    return Math.max(1, Math.ceil((rateLimitState.lockoutUntil - Date.now()) / 60000));
   };
 
   return (
     <View style={styles.container}>
-      <TopBar title="Create Account" onBack={() => navigation.goBack()} />
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Brand Logo & Header */}
+      <TopBar title="" onBack={() => navigation.goBack()} />
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Brand Header */}
         <View style={styles.header}>
           <Image
             source={require('../../../assets/logo.png')}
             style={styles.logo}
             resizeMode="contain"
           />
-          <Text style={styles.title}>Join Menial</Text>
-          <Text style={styles.subtitle}>
-            Register with verified credentials to hire trusted workers or earn on verified jobs across Nigeria.
-          </Text>
+          <Text style={styles.title}>Create account</Text>
+          <Text style={styles.subtitle}>Join Nigeria's verified artisan marketplace</Text>
         </View>
 
         {/* Global Error Banner */}
         {error && (
           <View style={styles.errorBanner}>
-            <Text style={styles.errorIcon}>⚠️</Text>
             <Text style={styles.errorText}>{error}</Text>
           </View>
         )}
 
-        {/* Account Role Selector Card */}
-        <View style={styles.roleContainer}>
-          <Text style={styles.roleLabel}>I WANT TO REGISTER AS:</Text>
-          <View style={styles.roleRow}>
-            <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={() => setSelectedRole('worker')}
-              style={[
-                styles.roleCard,
-                selectedRole === 'worker' && styles.roleCardActive,
-              ]}
-            >
-              <Text style={styles.roleEmoji}>👷</Text>
-              <View style={styles.roleInfo}>
-                <Text
-                  style={[
-                    styles.roleTitle,
-                    selectedRole === 'worker' && styles.roleTitleActive,
-                  ]}
-                >
-                  Worker / Artisan
-                </Text>
-                <Text style={styles.roleDesc}>Find jobs &amp; get paid</Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={() => setSelectedRole('employer')}
-              style={[
-                styles.roleCard,
-                selectedRole === 'employer' && styles.roleCardActive,
-              ]}
-            >
-              <Text style={styles.roleEmoji}>🏢</Text>
-              <View style={styles.roleInfo}>
-                <Text
-                  style={[
-                    styles.roleTitle,
-                    selectedRole === 'employer' && styles.roleTitleActive,
-                  ]}
-                >
-                  Employer / Hirer
-                </Text>
-                <Text style={styles.roleDesc}>Post jobs &amp; hire</Text>
-              </View>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Section 43 Rate-limit Alert Banner */}
-        {rateLimitState.isLocked && authMethod === 'phone' && (
-          <View style={styles.rateLimitCard}>
-            <Text style={styles.rateLimitIcon}>⏳</Text>
-            <View style={styles.rateLimitContent}>
-              <Text style={styles.rateLimitTitle}>Request Limit Reached (Section 43)</Text>
-              <Text style={styles.rateLimitText}>
-                {rateLimitState.message ||
-                  `Maximum 3 requests reached. Please wait ${getLockoutRemainingMinutes()} minute(s) before requesting another code.`}
-              </Text>
-            </View>
-          </View>
-        )}
-
-        {/* Social Sign Up (Google / Gmail, Facebook, LinkedIn) */}
-        <View style={styles.socialSection}>
-          <SocialAuthButtons
-            onSelectProvider={handleSocialSignUp}
-            loadingProvider={socialLoading}
-            mode="signup"
-          />
-        </View>
-
-        {/* Or Divider */}
-        <View style={styles.dividerRow}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>OR SIGN UP WITH</Text>
-          <View style={styles.dividerLine} />
-        </View>
-
-        {/* Auth Method Segmented Tabs: Phone vs Email */}
-        <View style={styles.segmentedControl}>
+        {/* Minimal Role Pill Selector */}
+        <View style={styles.roleToggle}>
           <TouchableOpacity
             activeOpacity={0.8}
-            onPress={() => {
-              setAuthMethod('phone');
-              setError(null);
-            }}
-            style={[
-              styles.segmentBtn,
-              authMethod === 'phone' && styles.segmentBtnActive,
-            ]}
+            onPress={() => setSelectedRole('worker')}
+            style={[styles.roleBtn, selectedRole === 'worker' && styles.roleBtnActive]}
           >
             <Text
               style={[
-                styles.segmentText,
-                authMethod === 'phone' && styles.segmentTextActive,
+                styles.roleText,
+                selectedRole === 'worker' && styles.roleTextActive,
               ]}
             >
-              📱 Mobile Phone (SMS)
+              👷 I Want to Work
             </Text>
           </TouchableOpacity>
-
           <TouchableOpacity
             activeOpacity={0.8}
-            onPress={() => {
-              setAuthMethod('email');
-              setError(null);
-            }}
-            style={[
-              styles.segmentBtn,
-              authMethod === 'email' && styles.segmentBtnActive,
-            ]}
+            onPress={() => setSelectedRole('employer')}
+            style={[styles.roleBtn, selectedRole === 'employer' && styles.roleBtnActive]}
           >
             <Text
               style={[
-                styles.segmentText,
-                authMethod === 'email' && styles.segmentTextActive,
+                styles.roleText,
+                selectedRole === 'employer' && styles.roleTextActive,
               ]}
             >
-              ✉️ Email &amp; Password
+              🏢 I Want to Hire
             </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Common Legal Name Input */}
+        {/* Full Legal Name */}
         <Input
-          label="Full Legal Name (as on Government ID)"
+          label="Legal Name"
           placeholder="e.g. Chukwuma Adeleke"
           value={fullName}
           onChangeText={(val) => {
@@ -287,11 +180,49 @@ export const RegistrationScreen: React.FC<RegistrationScreenProps> = ({ navigati
           onClear={() => setFullName('')}
         />
 
-        {/* Dynamic Form based on Auth Method */}
+        {/* Method Toggle: Phone vs Email */}
+        <View style={styles.methodToggle}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => {
+              setAuthMethod('phone');
+              setError(null);
+            }}
+            style={[styles.toggleBtn, authMethod === 'phone' && styles.toggleBtnActive]}
+          >
+            <Text
+              style={[
+                styles.toggleText,
+                authMethod === 'phone' && styles.toggleTextActive,
+              ]}
+            >
+              Phone Number
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => {
+              setAuthMethod('email');
+              setError(null);
+            }}
+            style={[styles.toggleBtn, authMethod === 'email' && styles.toggleBtnActive]}
+          >
+            <Text
+              style={[
+                styles.toggleText,
+                authMethod === 'email' && styles.toggleTextActive,
+              ]}
+            >
+              Email Address
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Dynamic Fields */}
         {authMethod === 'phone' ? (
           <View style={styles.formGroup}>
             <Input
-              label="Mobile Phone Number"
+              label="Phone Number"
               placeholder="801 234 5678"
               value={phone}
               onChangeText={(val) => {
@@ -304,38 +235,19 @@ export const RegistrationScreen: React.FC<RegistrationScreenProps> = ({ navigati
               editable={!rateLimitState.isLocked}
             />
 
-            {/* Terms of Service Checkbox */}
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => setAgreedToTerms(!agreedToTerms)}
-              style={styles.termsRow}
-            >
-              <View style={[styles.checkbox, agreedToTerms && styles.checkboxActive]}>
-                {agreedToTerms && <Text style={styles.checkmark}>✓</Text>}
-              </View>
-              <Text style={styles.termsText}>
-                I agree to the <Text style={styles.termsLink}>Terms of Service</Text>,{' '}
-                <Text style={styles.termsLink}>Privacy Policy</Text>, and NDPA data protection standards.
-              </Text>
-            </TouchableOpacity>
-
             <Button
-              title={
-                rateLimitState.isLocked
-                  ? `Locked (${getLockoutRemainingMinutes()}m wait)`
-                  : 'Continue to Phone Verification'
-              }
+              title="Continue"
               onPress={handleRegisterPhone}
               loading={loading}
-              disabled={rateLimitState.isLocked || !fullName.trim() || phone.length < 10 || !agreedToTerms}
-              style={styles.submitButton}
+              disabled={rateLimitState.isLocked || !fullName.trim() || phone.length < 10}
+              style={styles.primaryBtn}
             />
           </View>
         ) : (
           <View style={styles.formGroup}>
             <Input
-              label="Email Address"
-              placeholder="e.g. name@domain.com"
+              label="Email"
+              placeholder="you@domain.com"
               value={email}
               onChangeText={(val) => {
                 setEmail(val);
@@ -348,8 +260,8 @@ export const RegistrationScreen: React.FC<RegistrationScreenProps> = ({ navigati
 
             <View style={styles.passwordWrapper}>
               <Input
-                label="Create Password (min 6 characters)"
-                placeholder="Choose a strong password"
+                label="Password (min 6 chars)"
+                placeholder="••••••••"
                 value={password}
                 onChangeText={(val) => {
                   setPassword(val);
@@ -366,30 +278,35 @@ export const RegistrationScreen: React.FC<RegistrationScreenProps> = ({ navigati
               </TouchableOpacity>
             </View>
 
-            {/* Terms of Service Checkbox */}
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => setAgreedToTerms(!agreedToTerms)}
-              style={styles.termsRow}
-            >
-              <View style={[styles.checkbox, agreedToTerms && styles.checkboxActive]}>
-                {agreedToTerms && <Text style={styles.checkmark}>✓</Text>}
-              </View>
-              <Text style={styles.termsText}>
-                I agree to the <Text style={styles.termsLink}>Terms of Service</Text>,{' '}
-                <Text style={styles.termsLink}>Privacy Policy</Text>, and NDPA data protection standards.
-              </Text>
-            </TouchableOpacity>
-
             <Button
-              title="Create Account with Email"
+              title="Create Account"
               onPress={handleRegisterEmail}
               loading={loading}
-              disabled={!fullName.trim() || !email || password.length < 6 || !agreedToTerms}
-              style={styles.submitButton}
+              disabled={!fullName.trim() || !email || password.length < 6}
+              style={styles.primaryBtn}
             />
           </View>
         )}
+
+        {/* Minimal Divider */}
+        <View style={styles.dividerRow}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>or sign up with</Text>
+          <View style={styles.dividerLine} />
+        </View>
+
+        {/* Icon-Only Social Buttons */}
+        <View style={styles.socialRow}>
+          <SocialAuthButtons
+            onSelectProvider={handleSocialSignUp}
+            loadingProvider={socialLoading}
+          />
+        </View>
+
+        {/* Minimal Terms Note */}
+        <Text style={styles.termsNote}>
+          By signing up, you agree to our Terms of Service &amp; NDPA Privacy Policy.
+        </Text>
 
         {/* Footer Link to Login */}
         <View style={styles.footerLinkRow}>
@@ -398,11 +315,6 @@ export const RegistrationScreen: React.FC<RegistrationScreenProps> = ({ navigati
             <Text style={styles.footerLink}>Sign in</Text>
           </TouchableOpacity>
         </View>
-
-        {/* Compliance Note */}
-        <Text style={styles.complianceNote}>
-          Menial adheres to the Nigeria Data Protection Act (NDPA 2023) Section 80 with national identity privacy masking.
-        </Text>
       </ScrollView>
     </View>
   );
@@ -414,156 +326,44 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.canvas,
   },
   content: {
-    paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.xxl,
+    paddingHorizontal: Spacing.xl,
+    paddingTop: Spacing.sm,
+    paddingBottom: Spacing.xl,
   },
   header: {
     alignItems: 'center',
     marginBottom: Spacing.md,
-    marginTop: Spacing.xs,
   },
   logo: {
-    width: 140,
-    height: 38,
-    marginBottom: Spacing.xs,
+    width: 130,
+    height: 36,
+    marginBottom: Spacing.md,
   },
   title: {
     ...Typography.scale.headlineMd,
     color: Colors.textPrimary,
     fontWeight: '800',
     marginBottom: 4,
-    textAlign: 'center',
   },
   subtitle: {
     ...Typography.scale.bodySm,
     color: Colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 18,
-    paddingHorizontal: Spacing.sm,
-  },
-  roleContainer: {
-    marginBottom: Spacing.md,
-  },
-  roleLabel: {
-    ...Typography.scale.labelSm,
-    color: Colors.textMuted,
-    fontSize: 10,
-    letterSpacing: 0.8,
-    marginBottom: 6,
-    fontWeight: '700',
-  },
-  roleRow: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-  },
-  roleCard: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.surface,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-    borderRadius: Radii.lg,
-    paddingVertical: 10,
-    paddingHorizontal: Spacing.sm,
-    gap: 8,
-  },
-  roleCardActive: {
-    borderColor: Colors.primary,
-    backgroundColor: Colors.primaryContainer,
-  },
-  roleEmoji: {
-    fontSize: 22,
-  },
-  roleInfo: {
-    flex: 1,
-  },
-  roleTitle: {
-    ...Typography.scale.labelSm,
-    color: Colors.textPrimary,
-    fontWeight: '700',
-    fontSize: 12,
-  },
-  roleTitleActive: {
-    color: Colors.primary,
-    fontWeight: '800',
-  },
-  roleDesc: {
-    fontSize: 10,
-    color: Colors.textSecondary,
-    marginTop: 1,
+    fontSize: 13,
   },
   errorBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
     backgroundColor: Colors.dangerContainer,
     borderRadius: Radii.md,
-    borderWidth: 1,
-    borderColor: Colors.danger,
     padding: Spacing.sm,
     marginBottom: Spacing.md,
-    gap: Spacing.xs,
-  },
-  errorIcon: {
-    fontSize: 16,
+    alignItems: 'center',
   },
   errorText: {
     ...Typography.scale.bodySm,
     color: Colors.dangerText,
-    flex: 1,
     fontWeight: '600',
+    fontSize: 12,
   },
-  rateLimitCard: {
-    flexDirection: 'row',
-    backgroundColor: Colors.dangerContainer,
-    borderRadius: Radii.md,
-    borderWidth: 1,
-    borderColor: Colors.danger,
-    padding: Spacing.md,
-    marginBottom: Spacing.md,
-    alignItems: 'flex-start',
-  },
-  rateLimitIcon: {
-    fontSize: 20,
-    marginRight: Spacing.sm,
-    marginTop: 2,
-  },
-  rateLimitContent: {
-    flex: 1,
-  },
-  rateLimitTitle: {
-    ...Typography.scale.labelMd,
-    color: Colors.dangerText,
-    fontWeight: '700',
-    marginBottom: 2,
-  },
-  rateLimitText: {
-    ...Typography.scale.bodySm,
-    color: Colors.dangerText,
-    lineHeight: 18,
-  },
-  socialSection: {
-    marginBottom: Spacing.md,
-  },
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: Spacing.md,
-    gap: Spacing.sm,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: Colors.border,
-  },
-  dividerText: {
-    ...Typography.scale.labelSm,
-    color: Colors.textMuted,
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 0.8,
-  },
-  segmentedControl: {
+  roleToggle: {
     flexDirection: 'row',
     backgroundColor: Colors.surfaceSubtle,
     borderRadius: Radii.lg,
@@ -572,14 +372,41 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
   },
-  segmentBtn: {
+  roleBtn: {
     flex: 1,
     paddingVertical: 9,
     alignItems: 'center',
-    justifyContent: 'center',
     borderRadius: Radii.md,
   },
-  segmentBtnActive: {
+  roleBtnActive: {
+    backgroundColor: Colors.primaryContainer,
+  },
+  roleText: {
+    ...Typography.scale.labelSm,
+    color: Colors.textSecondary,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  roleTextActive: {
+    color: Colors.primary,
+    fontWeight: '800',
+  },
+  methodToggle: {
+    flexDirection: 'row',
+    backgroundColor: Colors.surfaceSubtle,
+    borderRadius: Radii.full,
+    padding: 3,
+    marginVertical: Spacing.sm,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  toggleBtn: {
+    flex: 1,
+    paddingVertical: 7,
+    alignItems: 'center',
+    borderRadius: Radii.full,
+  },
+  toggleBtnActive: {
     backgroundColor: Colors.surface,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -587,15 +414,14 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
-  segmentText: {
+  toggleText: {
     ...Typography.scale.labelSm,
     color: Colors.textSecondary,
-    fontWeight: '600',
     fontSize: 12,
   },
-  segmentTextActive: {
+  toggleTextActive: {
     color: Colors.primary,
-    fontWeight: '800',
+    fontWeight: '700',
   },
   formGroup: {
     gap: Spacing.xs,
@@ -611,73 +437,55 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   eyeText: {
-    fontSize: 16,
+    fontSize: 15,
   },
-  termsRow: {
+  primaryBtn: {
+    marginTop: Spacing.sm,
+  },
+  dividerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: Spacing.sm,
+    marginVertical: Spacing.lg,
     gap: Spacing.sm,
-    paddingHorizontal: 2,
   },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  checkboxActive: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
-  },
-  checkmark: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '900',
-  },
-  termsText: {
-    ...Typography.scale.bodySm,
-    color: Colors.textSecondary,
+  dividerLine: {
     flex: 1,
+    height: 1,
+    backgroundColor: Colors.border,
+  },
+  dividerText: {
+    ...Typography.scale.labelSm,
+    color: Colors.textMuted,
     fontSize: 11,
+    fontWeight: '500',
+  },
+  socialRow: {
+    alignItems: 'center',
+    marginBottom: Spacing.md,
+  },
+  termsNote: {
+    ...Typography.scale.bodySm,
+    color: Colors.textMuted,
+    fontSize: 11,
+    textAlign: 'center',
     lineHeight: 16,
-  },
-  termsLink: {
-    color: Colors.primary,
-    fontWeight: '700',
-  },
-  submitButton: {
-    marginTop: Spacing.xs,
+    paddingHorizontal: Spacing.md,
     marginBottom: Spacing.md,
   },
   footerLinkRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: Spacing.md,
   },
   footerPrompt: {
-    ...Typography.scale.bodyMd,
+    ...Typography.scale.bodySm,
     color: Colors.textSecondary,
     fontSize: 13,
   },
   footerLink: {
     ...Typography.scale.labelMd,
     color: Colors.primary,
-    fontWeight: '800',
+    fontWeight: '700',
     fontSize: 13,
-  },
-  complianceNote: {
-    ...Typography.scale.bodySm,
-    color: Colors.textMuted,
-    textAlign: 'center',
-    fontSize: 10,
-    lineHeight: 14,
-    marginTop: Spacing.md,
-    paddingHorizontal: Spacing.md,
   },
 });

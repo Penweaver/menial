@@ -1097,11 +1097,29 @@ export const ApiService = {
       .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
   },
 
+  getSupportedBanks(): typeof SUPPORTED_NIGERIAN_BANKS {
+    return SUPPORTED_NIGERIAN_BANKS;
+  },
+
+  async resolveNubanAccount(
+    accountNumber: string,
+    bankCode: string
+  ): Promise<{ success: boolean; accountName?: string; error?: string }> {
+    const res = await payoutProvider.resolveBankAccount(accountNumber, bankCode);
+    return {
+      success: res.valid,
+      accountName: res.accountName,
+      error: res.error,
+    };
+  },
+
   getEmployerJobHistory(employerId?: string) {
     return Array.from(createdJobsStore.values())
       .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
   },
 };
+
+export const apiService = ApiService;
 
 export interface WorkerEarningsSummary {
   availableBalanceKobo: number;

@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   ScrollView,
   Image,
-  ActivityIndicator,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Colors, Typography, Spacing, Radii } from '../../constants/theme';
@@ -47,7 +46,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
     setError(null);
     const cleaned = phone.replace(/\D/g, '');
     if (cleaned.length < 10 || cleaned.length > 11) {
-      setError('Please enter a valid 10 or 11-digit Nigerian phone number.');
+      setError('Please enter a valid 10 or 11-digit phone number.');
       return;
     }
 
@@ -66,7 +65,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
     }
   };
 
-  // Email & Password Flow
+  // Email Flow
   const handleEmailLogin = async () => {
     setError(null);
     if (!email.trim() || !email.includes('@')) {
@@ -74,7 +73,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       return;
     }
     if (!password || password.length < 6) {
-      setError('Password must be at least 6 characters long.');
+      setError('Password must be at least 6 characters.');
       return;
     }
 
@@ -83,11 +82,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
     setLoading(false);
 
     if (!result.success) {
-      setError(result.error || 'Invalid email or password.');
+      setError(result.error || 'Invalid credentials.');
     }
   };
 
-  // Social Auth Flow
+  // Social Auth Flow (Icon-only)
   const handleSocialLogin = async (provider: 'google' | 'facebook' | 'linkedin') => {
     setError(null);
     setSocialLoading(provider);
@@ -95,120 +94,92 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
     setSocialLoading(null);
 
     if (!result.success) {
-      setError(result.error || `Unable to complete ${provider} login.`);
+      setError(result.error || `Unable to sign in with ${provider}.`);
     }
-  };
-
-  const getLockoutRemainingMinutes = () => {
-    if (!rateLimitState.lockoutUntil) return 0;
-    return Math.max(1, Math.ceil((rateLimitState.lockoutUntil - Date.now()) / 60000));
   };
 
   return (
     <View style={styles.container}>
-      <TopBar title="Sign In" onBack={() => navigation.goBack()} />
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Brand Logo & Header */}
+      <TopBar title="" onBack={() => navigation.goBack()} />
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Brand Header */}
         <View style={styles.header}>
           <Image
             source={require('../../../assets/logo.png')}
             style={styles.logo}
             resizeMode="contain"
           />
-          <Text style={styles.title}>Welcome Back</Text>
-          <Text style={styles.subtitle}>
-            Sign in to access verified marketplace jobs, active escrows, and instant cashouts.
-          </Text>
+          <Text style={styles.title}>Welcome back</Text>
+          <Text style={styles.subtitle}>Enter your details to sign in</Text>
         </View>
 
         {/* Global Error Banner */}
         {error && (
           <View style={styles.errorBanner}>
-            <Text style={styles.errorIcon}>⚠️</Text>
             <Text style={styles.errorText}>{error}</Text>
           </View>
         )}
 
         {/* Section 43 Rate-limit Alert Banner */}
-        {rateLimitState.isLocked && authMethod === 'phone' && (
+        {rateLimitState.isLocked && (
           <View style={styles.rateLimitCard}>
             <Text style={styles.rateLimitIcon}>⏳</Text>
             <View style={styles.rateLimitContent}>
               <Text style={styles.rateLimitTitle}>Request Limit Reached (Section 43)</Text>
               <Text style={styles.rateLimitText}>
-                {rateLimitState.message ||
-                  `Maximum 3 requests reached. Please wait ${getLockoutRemainingMinutes()} minute(s) before requesting another code.`}
+                {rateLimitState.message || 'Maximum 3 requests reached. Please wait before requesting another code.'}
               </Text>
             </View>
           </View>
         )}
 
-        {/* Social Logins (Google / Gmail, Facebook, LinkedIn) */}
-        <View style={styles.socialSection}>
-          <SocialAuthButtons
-            onSelectProvider={handleSocialLogin}
-            loadingProvider={socialLoading}
-            mode="signin"
-          />
-        </View>
-
-        {/* Or Divider */}
-        <View style={styles.dividerRow}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>OR SIGN IN WITH</Text>
-          <View style={styles.dividerLine} />
-        </View>
-
-        {/* Auth Method Segmented Tabs: Phone vs Email */}
-        <View style={styles.segmentedControl}>
+        {/* Minimal Method Selector */}
+        <View style={styles.methodToggle}>
           <TouchableOpacity
             activeOpacity={0.8}
             onPress={() => {
               setAuthMethod('phone');
               setError(null);
             }}
-            style={[
-              styles.segmentBtn,
-              authMethod === 'phone' && styles.segmentBtnActive,
-            ]}
+            style={[styles.toggleBtn, authMethod === 'phone' && styles.toggleBtnActive]}
           >
             <Text
               style={[
-                styles.segmentText,
-                authMethod === 'phone' && styles.segmentTextActive,
+                styles.toggleText,
+                authMethod === 'phone' && styles.toggleTextActive,
               ]}
             >
-              📱 Mobile Phone (SMS)
+              Phone Number
             </Text>
           </TouchableOpacity>
-
           <TouchableOpacity
             activeOpacity={0.8}
             onPress={() => {
               setAuthMethod('email');
               setError(null);
             }}
-            style={[
-              styles.segmentBtn,
-              authMethod === 'email' && styles.segmentBtnActive,
-            ]}
+            style={[styles.toggleBtn, authMethod === 'email' && styles.toggleBtnActive]}
           >
             <Text
               style={[
-                styles.segmentText,
-                authMethod === 'email' && styles.segmentTextActive,
+                styles.toggleText,
+                authMethod === 'email' && styles.toggleTextActive,
               ]}
             >
-              ✉️ Email &amp; Password
+              Email Address
             </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Dynamic Form based on Auth Method */}
+        {/* Input Fields */}
         {authMethod === 'phone' ? (
           <View style={styles.formGroup}>
             <Input
-              label="Mobile Phone Number"
+              label="Phone Number"
               placeholder="801 234 5678"
               value={phone}
               onChangeText={(val) => {
@@ -222,22 +193,18 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             />
 
             <Button
-              title={
-                rateLimitState.isLocked
-                  ? `Locked (${getLockoutRemainingMinutes()}m wait)`
-                  : 'Send Verification Code'
-              }
+              title="Continue"
               onPress={handleSendOtp}
               loading={loading}
               disabled={rateLimitState.isLocked || phone.length < 10}
-              style={styles.submitButton}
+              style={styles.primaryBtn}
             />
           </View>
         ) : (
           <View style={styles.formGroup}>
             <Input
-              label="Email Address"
-              placeholder="e.g. name@domain.com"
+              label="Email"
+              placeholder="you@domain.com"
               value={email}
               onChangeText={(val) => {
                 setEmail(val);
@@ -251,7 +218,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             <View style={styles.passwordWrapper}>
               <Input
                 label="Password"
-                placeholder="Enter your password"
+                placeholder="••••••••"
                 value={password}
                 onChangeText={(val) => {
                   setPassword(val);
@@ -269,50 +236,49 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             </View>
 
             <Button
-              title="Sign In with Email"
+              title="Sign In"
               onPress={handleEmailLogin}
               loading={loading}
               disabled={!email || password.length < 6}
-              style={styles.submitButton}
+              style={styles.primaryBtn}
             />
           </View>
         )}
 
-        {/* Quick Demo Shortcuts for Reviewers */}
-        <View style={styles.demoSection}>
-          <Text style={styles.demoTitle}>⚡ INSTANT DEMO EVALUATION</Text>
-          <View style={styles.demoRow}>
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => loginAsDemo('employer')}
-              style={styles.demoBtn}
-            >
-              <Text style={styles.demoEmoji}>🏢</Text>
-              <Text style={styles.demoBtnText}>Employer Demo</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => loginAsDemo('worker')}
-              style={styles.demoBtn}
-            >
-              <Text style={styles.demoEmoji}>👷</Text>
-              <Text style={styles.demoBtnText}>Worker Demo</Text>
-            </TouchableOpacity>
-          </View>
+        {/* Minimal Divider */}
+        <View style={styles.dividerRow}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>or continue with</Text>
+          <View style={styles.dividerLine} />
+        </View>
+
+        {/* Icon-Only Social Buttons */}
+        <View style={styles.socialRow}>
+          <SocialAuthButtons
+            onSelectProvider={handleSocialLogin}
+            loadingProvider={socialLoading}
+          />
         </View>
 
         {/* Footer Link to Registration */}
         <View style={styles.footerLinkRow}>
           <Text style={styles.footerPrompt}>Don't have an account? </Text>
           <TouchableOpacity onPress={() => navigation.navigate('Registration')}>
-            <Text style={styles.footerLink}>Create an account</Text>
+            <Text style={styles.footerLink}>Sign up</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Compliance Note */}
-        <Text style={styles.complianceNote}>
-          Protected by NDPA 2023 privacy masking standards and CBN-compliant double-entry escrow security.
-        </Text>
+        {/* Discreet Test Account Shortcuts */}
+        <View style={styles.demoFooter}>
+          <Text style={styles.demoLabel}>Demo review mode:</Text>
+          <TouchableOpacity onPress={() => loginAsDemo('worker')}>
+            <Text style={styles.demoLink}>Worker</Text>
+          </TouchableOpacity>
+          <Text style={styles.demoDot}>•</Text>
+          <TouchableOpacity onPress={() => loginAsDemo('employer')}>
+            <Text style={styles.demoLink}>Employer</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </View>
   );
@@ -324,120 +290,59 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.canvas,
   },
   content: {
-    paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.xxl,
+    paddingHorizontal: Spacing.xl,
+    paddingTop: Spacing.sm,
+    paddingBottom: Spacing.xl,
   },
   header: {
     alignItems: 'center',
-    marginBottom: Spacing.md,
-    marginTop: Spacing.xs,
+    marginBottom: Spacing.lg,
   },
   logo: {
-    width: 140,
-    height: 38,
-    marginBottom: Spacing.xs,
+    width: 130,
+    height: 36,
+    marginBottom: Spacing.md,
   },
   title: {
     ...Typography.scale.headlineMd,
     color: Colors.textPrimary,
     fontWeight: '800',
     marginBottom: 4,
-    textAlign: 'center',
   },
   subtitle: {
     ...Typography.scale.bodySm,
     color: Colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 18,
-    paddingHorizontal: Spacing.sm,
+    fontSize: 13,
   },
   errorBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
     backgroundColor: Colors.dangerContainer,
     borderRadius: Radii.md,
-    borderWidth: 1,
-    borderColor: Colors.danger,
     padding: Spacing.sm,
     marginBottom: Spacing.md,
-    gap: Spacing.xs,
-  },
-  errorIcon: {
-    fontSize: 16,
+    alignItems: 'center',
   },
   errorText: {
     ...Typography.scale.bodySm,
     color: Colors.dangerText,
-    flex: 1,
     fontWeight: '600',
+    fontSize: 12,
   },
-  rateLimitCard: {
-    flexDirection: 'row',
-    backgroundColor: Colors.dangerContainer,
-    borderRadius: Radii.md,
-    borderWidth: 1,
-    borderColor: Colors.danger,
-    padding: Spacing.md,
-    marginBottom: Spacing.md,
-    alignItems: 'flex-start',
-  },
-  rateLimitIcon: {
-    fontSize: 20,
-    marginRight: Spacing.sm,
-    marginTop: 2,
-  },
-  rateLimitContent: {
-    flex: 1,
-  },
-  rateLimitTitle: {
-    ...Typography.scale.labelMd,
-    color: Colors.dangerText,
-    fontWeight: '700',
-    marginBottom: 2,
-  },
-  rateLimitText: {
-    ...Typography.scale.bodySm,
-    color: Colors.dangerText,
-    lineHeight: 18,
-  },
-  socialSection: {
-    marginBottom: Spacing.md,
-  },
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: Spacing.md,
-    gap: Spacing.sm,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: Colors.border,
-  },
-  dividerText: {
-    ...Typography.scale.labelSm,
-    color: Colors.textMuted,
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 0.8,
-  },
-  segmentedControl: {
+  methodToggle: {
     flexDirection: 'row',
     backgroundColor: Colors.surfaceSubtle,
-    borderRadius: Radii.lg,
+    borderRadius: Radii.full,
     padding: 3,
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.lg,
     borderWidth: 1,
     borderColor: Colors.border,
   },
-  segmentBtn: {
+  toggleBtn: {
     flex: 1,
-    paddingVertical: 9,
+    paddingVertical: 8,
     alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: Radii.md,
+    borderRadius: Radii.full,
   },
-  segmentBtnActive: {
+  toggleBtnActive: {
     backgroundColor: Colors.surface,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -445,15 +350,14 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
-  segmentText: {
+  toggleText: {
     ...Typography.scale.labelSm,
     color: Colors.textSecondary,
-    fontWeight: '600',
     fontSize: 12,
   },
-  segmentTextActive: {
+  toggleTextActive: {
     color: Colors.primary,
-    fontWeight: '800',
+    fontWeight: '700',
   },
   formGroup: {
     gap: Spacing.xs,
@@ -469,77 +373,100 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   eyeText: {
-    fontSize: 16,
-  },
-  submitButton: {
-    marginTop: Spacing.sm,
-    marginBottom: Spacing.md,
-  },
-  demoSection: {
-    marginTop: Spacing.xs,
-    paddingTop: Spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-    alignItems: 'center',
-  },
-  demoTitle: {
-    ...Typography.scale.labelSm,
-    color: Colors.textMuted,
-    fontSize: 10,
-    letterSpacing: 0.8,
-    marginBottom: Spacing.xs,
-    fontWeight: '700',
-  },
-  demoRow: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-    width: '100%',
-  },
-  demoBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: Radii.md,
-    paddingVertical: 9,
-    gap: 6,
-  },
-  demoEmoji: {
     fontSize: 15,
   },
-  demoBtnText: {
+  primaryBtn: {
+    marginTop: Spacing.sm,
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: Spacing.lg,
+    gap: Spacing.sm,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: Colors.border,
+  },
+  dividerText: {
     ...Typography.scale.labelSm,
-    color: Colors.textPrimary,
-    fontWeight: '700',
-    fontSize: 12,
+    color: Colors.textMuted,
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  socialRow: {
+    alignItems: 'center',
+    marginBottom: Spacing.lg,
   },
   footerLinkRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: Spacing.lg,
+    marginBottom: Spacing.lg,
   },
   footerPrompt: {
-    ...Typography.scale.bodyMd,
+    ...Typography.scale.bodySm,
     color: Colors.textSecondary,
     fontSize: 13,
   },
   footerLink: {
     ...Typography.scale.labelMd,
     color: Colors.primary,
-    fontWeight: '800',
+    fontWeight: '700',
     fontSize: 13,
   },
-  complianceNote: {
+  demoFooter: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+    paddingTop: Spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+  },
+  demoLabel: {
     ...Typography.scale.bodySm,
     color: Colors.textMuted,
-    textAlign: 'center',
+    fontSize: 11,
+  },
+  demoLink: {
+    ...Typography.scale.labelSm,
+    color: Colors.primary,
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  demoDot: {
+    color: Colors.textMuted,
     fontSize: 10,
-    lineHeight: 14,
-    marginTop: Spacing.md,
-    paddingHorizontal: Spacing.md,
+  },
+  rateLimitCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    borderRadius: Radii.md,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+    gap: Spacing.sm,
+  },
+  rateLimitIcon: {
+    fontSize: 20,
+  },
+  rateLimitContent: {
+    flex: 1,
+  },
+  rateLimitTitle: {
+    ...Typography.scale.labelMd,
+    color: '#991B1B',
+    fontWeight: '700',
+    fontSize: 13,
+  },
+  rateLimitText: {
+    ...Typography.scale.bodySm,
+    color: '#B91C1C',
+    fontSize: 12,
+    marginTop: 2,
   },
 });

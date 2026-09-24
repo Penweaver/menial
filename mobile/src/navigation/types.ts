@@ -59,4 +59,7 @@ export type WorkerProfileStackParamList = {
   ProfileSetup: undefined;
   NINVerification: undefined;
   VerificationStatus: undefined;
+  PayoutSettings: undefined;
+  Preferences: undefined;
+  Support: undefined;
 };
