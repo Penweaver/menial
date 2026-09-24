@@ -316,8 +316,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const deleteAccount = useCallback(
     async (reason?: string): Promise<{ success: boolean; error?: string }> => {
       try {
-        const userId = session?.userId || 'worker_adebayo';
-        const res = await ApiService.deleteWorkerAccount(userId, reason);
+        const userId = session?.userId || (activeRole === 'employer' ? 'employer_default' : 'worker_adebayo');
+        const res =
+          activeRole === 'employer'
+            ? await ApiService.deleteEmployerAccount(userId, reason)
+            : await ApiService.deleteWorkerAccount(userId, reason);
         if (!res.success) {
           return res;
         }
@@ -327,7 +330,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { success: false, error: err.message || 'Account deletion failed.' };
       }
     },
-    [session, logout]
+    [session, activeRole, logout]
   );
 
   return (

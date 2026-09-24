@@ -47,6 +47,16 @@ export type EmployerCreateJobStackParamList = {
   ReviewPublish: undefined;
 };
 
+export type EmployerProfileStackParamList = {
+  ProfileHome: undefined;
+  CompanyDetails: undefined;
+  BillingPayments: undefined;
+  HiringHistory: undefined;
+  Preferences: undefined;
+  Support: undefined;
+  DeleteAccount: undefined;
+};
+
 export type WorkerTabParamList = {
   JobFeed: undefined;
   ActiveJob: undefined;

@@ -694,6 +694,49 @@ export const SEED_WORKERS: MarketplaceWorker[] = [
   },
 ];
 
+// Employer Profile & Account Types (§22, §38, §80)
+export interface EmployerProfileDetails {
+  fullName: string;
+  companyName: string;
+  phone: string;
+  email: string;
+  defaultLocationAddress: string;
+  defaultLga: string;
+  businessType: 'Individual / Homeowner' | 'Property Manager' | 'Corporate / SME' | 'Construction Contractor';
+  avatarUrl?: string | null;
+}
+
+export interface EmployerHiringSummary {
+  totalJobsPosted: number;
+  activeJobsCount: number;
+  completedJobsCount: number;
+  totalWorkersHired: number;
+  totalEscrowFundedKobo: number;
+}
+
+export interface EmployerPaymentMethod {
+  id: string;
+  type: 'card' | 'bank_transfer';
+  label: string;
+  details: string;
+  isDefault: boolean;
+  brand?: string;
+  expiry?: string;
+}
+
+export const DEFAULT_EMPLOYER_PROFILE: EmployerProfileDetails = {
+  fullName: 'Olumide Bakare',
+  companyName: 'Bakare Estates & Properties',
+  phone: '+234 802 999 8888',
+  email: 'olumide@bakareestates.ng',
+  defaultLocationAddress: 'Block 4, Admiralty Way, Lekki Phase 1',
+  defaultLga: 'Eti-Osa, Lagos',
+  businessType: 'Property Manager',
+  avatarUrl: null,
+};
+
+let employerProfileStore: EmployerProfileDetails = { ...DEFAULT_EMPLOYER_PROFILE };
+
 export const ApiService = {
   // Auth (§9, §43)
   async requestPhoneOtp(phone: string): Promise<RequestOtpResult> {
@@ -1116,6 +1159,89 @@ export const ApiService = {
   getEmployerJobHistory(employerId?: string) {
     return Array.from(createdJobsStore.values())
       .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+  },
+
+  // Employer Account Standardization & Lifecycle (§22, §38, §80)
+  getEmployerProfile(employerId: string = 'employer_default'): EmployerProfileDetails {
+    return { ...employerProfileStore };
+  },
+
+  async updateEmployerProfile(
+    employerId: string = 'employer_default',
+    details: Partial<EmployerProfileDetails>
+  ): Promise<{ success: boolean; error?: string }> {
+    employerProfileStore = {
+      ...employerProfileStore,
+      ...details,
+    };
+    return { success: true };
+  },
+
+  getEmployerHiringSummary(employerId?: string): EmployerHiringSummary {
+    const jobs = Array.from(createdJobsStore.values());
+    const activeJobs = jobs.filter((j) =>
+      ['payment_secured', 'assigned', 'in_progress', 'travelling', 'arrived'].includes(j.status)
+    );
+    const completedJobs = jobs.filter((j) => j.status === 'completed');
+    const totalEscrowFundedKobo = jobs.reduce(
+      (sum, j) => sum + (j.isEscrowFunded ? (j.pricing?.totalEmployerChargeKobo || j.workerPayKobo || 0) : 0),
+      0
+    );
+
+    return {
+      totalJobsPosted: Math.max(jobs.length, 12),
+      activeJobsCount: activeJobs.length,
+      completedJobsCount: Math.max(completedJobs.length, 11),
+      totalWorkersHired: Math.max(jobs.filter((j) => !!j.hiredWorkerId).length, 18),
+      totalEscrowFundedKobo: Math.max(totalEscrowFundedKobo, 48500000), // baseline ₦485,000 funded
+    };
+  },
+
+  getEmployerPaymentMethods(employerId?: string): EmployerPaymentMethod[] {
+    return [
+      {
+        id: 'pm_card_01',
+        type: 'card',
+        label: 'Paystack Secured Card',
+        details: 'Visa ending in 4242',
+        brand: 'Visa',
+        expiry: '08/28',
+        isDefault: true,
+      },
+      {
+        id: 'pm_bank_01',
+        type: 'bank_transfer',
+        label: 'NIP Direct Escrow Transfer',
+        details: 'Wema Bank • Virtual Dedicated Account',
+        isDefault: false,
+      },
+    ];
+  },
+
+  async deleteEmployerAccount(
+    employerId: string = 'employer_default',
+    reason?: string
+  ): Promise<{ success: boolean; error?: string }> {
+    // 1. Check for active uncompleted/funded jobs (§32, §38)
+    const activeJobs = Array.from(createdJobsStore.values()).filter(
+      (j) => ['payment_secured', 'assigned', 'in_progress', 'travelling', 'arrived'].includes(j.status)
+    );
+    if (activeJobs.length > 0) {
+      return {
+        success: false,
+        error: `Cannot delete account with ${activeJobs.length} active job(s) in progress. Please complete or cancel ongoing assignments first.`,
+      };
+    }
+
+    // 2. Clear employer profile and purge jobs per NDPA Erasure §80
+    employerProfileStore = { ...DEFAULT_EMPLOYER_PROFILE };
+    for (const [id, job] of createdJobsStore.entries()) {
+      if (['draft', 'published', 'completed', 'cancelled'].includes(job.status)) {
+        createdJobsStore.delete(id);
+      }
+    }
+
+    return { success: true };
   },
 
   // Worker Account Standardization & Lifecycle (§22, §44, §80)
