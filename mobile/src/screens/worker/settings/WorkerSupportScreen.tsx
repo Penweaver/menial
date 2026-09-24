@@ -60,6 +60,12 @@ export const WorkerSupportScreen: React.FC<Props> = ({ navigation }) => {
             onPress={handleCallSupport}
             style={styles.hotlineBtn}
           />
+          <Button
+            title="🛡️ Emergency Contacts & SOS Center"
+            variant="outline"
+            onPress={() => navigation.navigate('SafetyCenter')}
+            style={styles.safetyCenterBtn}
+          />
         </Card>
 
         {/* Worker Bill of Rights */}
@@ -174,6 +180,10 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   hotlineBtn: {
+    width: '100%',
+    marginBottom: Spacing.sm,
+  },
+  safetyCenterBtn: {
     width: '100%',
   },
   sectionHeader: {

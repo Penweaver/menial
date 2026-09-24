@@ -15,6 +15,7 @@ import { Badge } from '../../../components/common/Badge';
 import { Button } from '../../../components/common/Button';
 import { TopBar } from '../../../components/common/TopBar';
 import { EmergencySosModal } from '../../../components/safety/EmergencySosModal';
+import { ActiveSosBanner } from '../../../components/safety/ActiveSosBanner';
 import { JobRatingModal } from '../../../components/trust/JobRatingModal';
 import { ApiService } from '../../../services/api';
 
@@ -134,11 +135,28 @@ export const WorkerActiveJobScreen: React.FC = () => {
             style={styles.sosPillBtn}
             onPress={() => setSosModalVisible(true)}
             activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="Open Emergency SOS center"
           >
             <Text style={styles.sosPillText}>🚨 SOS</Text>
           </TouchableOpacity>
         }
       />
+
+      {/* Persistent Section 49 Active Emergency SOS Banner */}
+      {(() => {
+        const activeSos = ApiService.getActiveSosForJob(job.id);
+        if (activeSos && activeSos.status !== 'resolved') {
+          return (
+            <ActiveSosBanner
+              dossierRef={activeSos.reportId}
+              category={activeSos.category}
+              onPress={() => setSosModalVisible(true)}
+            />
+          );
+        }
+        return null;
+      })()}
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Job Status Banner */}

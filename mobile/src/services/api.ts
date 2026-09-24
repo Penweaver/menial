@@ -13,7 +13,19 @@ import { MockVerificationProvider } from '@shared/services/verification/MockVeri
 import { MockPaymentProvider } from '@shared/services/payment/MockPaymentProvider';
 import { MockPayoutProvider } from '@shared/services/payment/MockPayoutProvider';
 import { JobExecutionService } from '@shared/services/execution/JobExecutionService';
-import { TrustSafetyService, EmergencySosParams, JobShareDetails, SubmitRatingParams, RatingSubmissionResult } from '@shared/services/trust/TrustSafetyService';
+import {
+  TrustSafetyService,
+  EmergencySosParams,
+  JobShareDetails,
+  SubmitRatingParams,
+  RatingSubmissionResult,
+  EmergencyIncidentCategory,
+  EmergencyContact,
+  EmergencyHotline,
+  EMERGENCY_HOTLINES,
+  EmergencyDistressDetails,
+  EmergencySosDossier,
+} from '@shared/services/trust/TrustSafetyService';
 import type { InitializePaymentOptions, PaymentInitializationResult } from '@shared/services/payment/PaymentService';
 import type { BankAccountDetails, PayoutDisbursementResult } from '@shared/services/payment/PayoutService';
 import type { DiscoveredWorker } from '@shared/services/profile/ProfileService';
@@ -35,6 +47,24 @@ const createdJobsStore = new Map<string, any>();
 const sosReportsStore = new Map<string, any>();
 const ratingsStore = new Map<string, any>();
 let activePlatformFeePercent = 10.0;
+
+export const defaultEmergencyContacts: EmergencyContact[] = [
+  {
+    id: 'emc_01',
+    name: 'Chioma Adebayo',
+    phone: '+2348023456789',
+    relationship: 'Spouse',
+    isPrimary: true,
+  },
+  {
+    id: 'emc_02',
+    name: 'Tunde Adebayo',
+    phone: '+2348039876543',
+    relationship: 'Brother',
+    isPrimary: false,
+  },
+];
+export const emergencyContactsStore: EmergencyContact[] = [...defaultEmergencyContacts];
 
 export interface MockLedgerEntry {
   id: string;
@@ -375,17 +405,47 @@ export const mockDbClient: IDatabaseClient = {
     // 7. Trust & Safety Emergency SOS (§49)
     if (fn === 'trigger_emergency_sos' && args) {
       const reportId = `sos_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-      sosReportsStore.set(reportId, {
-        id: reportId,
+      const job = createdJobsStore.get(String(args.p_job_id));
+      const category = (args.p_category as EmergencyIncidentCategory) || 'physical_threat';
+      const dossier: EmergencySosDossier = {
+        reportId,
         jobId: String(args.p_job_id),
+        publicJobId: job?.publicJobId || 'MNL-2026-1042',
+        category,
         description: String(args.p_description),
-        locationText: args.p_location_text,
-        latitude: args.p_latitude,
-        longitude: args.p_longitude,
+        locationText: args.p_location_text || job?.locationText || 'Plot 14, Admiralty Way, Lekki Phase 1, Lagos',
+        latitude: typeof args.p_latitude === 'number' ? args.p_latitude : 6.4380,
+        longitude: typeof args.p_longitude === 'number' ? args.p_longitude : 3.4280,
+        isSilent: Boolean(args.p_is_silent),
+        batteryLevel: typeof args.p_battery_level === 'number' ? args.p_battery_level : 85,
         status: 'dispatched',
         createdAt: new Date().toISOString(),
-      });
+        reporterRole: (args.p_reporter_role as 'worker' | 'employer') || 'worker',
+        reporterId: args.p_reporter_id ? String(args.p_reporter_id) : 'current_user',
+        hotlines: ['112', '767', '080063642564'],
+        emergencyContactsNotified: Boolean(args.p_emergency_contacts_notified),
+      };
+      (dossier as any).id = reportId; // backward compatibility for legacy tests
+      sosReportsStore.set(reportId, dossier);
       return { data: reportId as unknown as T, error: null };
+    }
+
+    // 7b. Resolve Safety Report (§49, §63)
+    if (fn === 'resolve_safety_report' && args) {
+      const reportId = String(args.p_report_id);
+      const note = String(args.p_resolution_note || '');
+      const newStatus = (args.p_new_status as any) || 'resolved';
+      if (!note || note.trim().length < 5) {
+        return { data: null, error: new Error('A detailed resolution note is required to close safety reports (§49).') };
+      }
+      const existing = sosReportsStore.get(reportId);
+      if (existing) {
+        existing.status = newStatus;
+        existing.resolutionNote = note;
+        existing.resolvedAt = new Date().toISOString();
+        sosReportsStore.set(reportId, existing);
+      }
+      return { data: null as unknown as T, error: null };
     }
 
     // 8. Mutual Post-Job Ratings & Running Average (§46)
@@ -1009,8 +1069,68 @@ export const ApiService = {
     return defaultActiveJob;
   },
 
-  getSosReport(reportId: string) {
+  getSosReport(reportId: string): EmergencySosDossier | undefined {
     return sosReportsStore.get(reportId);
+  },
+
+  getActiveSosForJob(jobId: string): EmergencySosDossier | undefined {
+    for (const dossier of sosReportsStore.values()) {
+      if (dossier.jobId === jobId && dossier.status !== 'resolved') {
+        return dossier;
+      }
+    }
+    return undefined;
+  },
+
+  async resolveEmergencySos(reportId: string, resolutionNote: string): Promise<boolean> {
+    await trustSafetyService.resolveSafetyReport(reportId, resolutionNote, 'resolved');
+    return true;
+  },
+
+  getEmergencyContacts(): EmergencyContact[] {
+    return [...emergencyContactsStore];
+  },
+
+  saveEmergencyContact(contact: Omit<EmergencyContact, 'id'> & { id?: string }): EmergencyContact {
+    if (contact.id) {
+      const idx = emergencyContactsStore.findIndex((c) => c.id === contact.id);
+      if (idx !== -1) {
+        emergencyContactsStore[idx] = {
+          ...emergencyContactsStore[idx],
+          name: contact.name,
+          phone: contact.phone,
+          relationship: contact.relationship,
+          isPrimary: contact.isPrimary ?? emergencyContactsStore[idx].isPrimary,
+        };
+        return emergencyContactsStore[idx];
+      }
+    }
+    const newContact: EmergencyContact = {
+      id: `emc_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      name: contact.name,
+      phone: contact.phone,
+      relationship: contact.relationship,
+      isPrimary: contact.isPrimary ?? (emergencyContactsStore.length === 0),
+    };
+    emergencyContactsStore.push(newContact);
+    return newContact;
+  },
+
+  deleteEmergencyContact(contactId: string): boolean {
+    const idx = emergencyContactsStore.findIndex((c) => c.id === contactId);
+    if (idx !== -1) {
+      emergencyContactsStore.splice(idx, 1);
+      return true;
+    }
+    return false;
+  },
+
+  formatEmergencyDistressMessage(details: EmergencyDistressDetails): string {
+    return TrustSafetyService.formatEmergencyDistressMessage(details);
+  },
+
+  getEmergencyHotlines(): EmergencyHotline[] {
+    return EMERGENCY_HOTLINES;
   },
 
   // --------------------------------------------------------------------------

@@ -24,12 +24,82 @@ export interface RatingSubmissionResult {
   newAverageRating: number;
 }
 
+export type EmergencyIncidentCategory =
+  | 'physical_threat'
+  | 'medical_emergency'
+  | 'harassment'
+  | 'theft_robbery'
+  | 'safety_hazard'
+  | 'other';
+
+export interface EmergencyContact {
+  id: string;
+  name: string;
+  phone: string;
+  relationship: string;
+  isPrimary?: boolean;
+}
+
+export interface EmergencyHotline {
+  name: string;
+  number: string;
+  description: string;
+  tollFree: boolean;
+}
+
+export const EMERGENCY_HOTLINES: EmergencyHotline[] = [
+  {
+    name: 'National Emergency',
+    number: '112',
+    description: 'Police, Fire Service, Ambulance across Nigeria',
+    tollFree: true,
+  },
+  {
+    name: 'Lagos Emergency (LASEMA)',
+    number: '767',
+    description: 'Rapid response command center for Lagos State incidents',
+    tollFree: true,
+  },
+  {
+    name: 'Menial Rapid Incident Center',
+    number: '080063642564',
+    description: '24/7 Menial HQ Lagos operations & security dispatch',
+    tollFree: true,
+  },
+  {
+    name: 'FRSC Road Safety',
+    number: '122',
+    description: 'Federal Road Safety Corps for transit emergencies',
+    tollFree: true,
+  },
+];
+
 export interface EmergencySosParams {
   jobId: string;
+  publicJobId?: string;
+  category?: EmergencyIncidentCategory;
   description: string;
   locationText?: string;
   latitude?: number;
   longitude?: number;
+  isSilent?: boolean;
+  batteryLevel?: number;
+  emergencyContactsNotified?: boolean;
+  reporterRole?: 'worker' | 'employer';
+  reporterId?: string;
+}
+
+export interface EmergencyDistressDetails {
+  contactName?: string;
+  publicJobId: string;
+  jobTitle: string;
+  locationText: string;
+  latitude?: number;
+  longitude?: number;
+  reporterName: string;
+  reporterRole: string;
+  category?: EmergencyIncidentCategory;
+  dossierRef?: string;
 }
 
 export interface JobShareDetails {
@@ -89,6 +159,12 @@ export class TrustSafetyService {
       p_location_text: params.locationText,
       p_latitude: params.latitude,
       p_longitude: params.longitude,
+      p_category: params.category,
+      p_is_silent: params.isSilent,
+      p_battery_level: params.batteryLevel,
+      p_emergency_contacts_notified: params.emergencyContactsNotified,
+      p_reporter_role: params.reporterRole,
+      p_reporter_id: params.reporterId,
     });
 
     if (error || !data) {
@@ -166,4 +242,49 @@ export class TrustSafetyService {
       counterpartyRole: options.counterpartyRole,
     };
   }
+
+  /**
+   * Formats an urgent emergency distress message for direct transmission to emergency contacts
+   * via SMS or WhatsApp, including live GPS coordinates and emergency hotline references (§49).
+   */
+  public static formatEmergencyDistressMessage(details: EmergencyDistressDetails): string {
+    const mapsLink =
+      details.latitude && details.longitude
+        ? `\n📍 Live GPS Coordinates: https://maps.google.com/?q=${details.latitude},${details.longitude}`
+        : '';
+    const refText = details.dossierRef ? ` [Ref: ${details.dossierRef}]` : '';
+    const categoryText = details.category
+      ? ` (${details.category.replace(/_/g, ' ').toUpperCase()})`
+      : '';
+
+    return (
+      `🚨 MENIAL EMERGENCY DISTRESS ALERT${refText}${categoryText}\n` +
+      `URGENT: ${details.reporterName} (${details.reporterRole}) has triggered an on-site emergency alert on active Menial job #${details.publicJobId} (${details.jobTitle}) at "${details.locationText}".` +
+      `${mapsLink}\n\n` +
+      `If you cannot establish immediate contact, dial Lagos Emergency 767 or National Emergency 112 immediately. Menial 24/7 Rapid Incident Command: 0800-MENIAL-NG (+234 1 800 636 425).`
+    );
+  }
 }
+
+export interface EmergencySosDossier {
+  reportId: string;
+  jobId: string;
+  publicJobId?: string;
+  category: EmergencyIncidentCategory;
+  description: string;
+  locationText: string;
+  latitude: number;
+  longitude: number;
+  isSilent: boolean;
+  batteryLevel?: number;
+  status: 'open' | 'investigating' | 'dispatched' | 'resolved';
+  createdAt: string;
+  reporterRole?: 'worker' | 'employer';
+  reporterId?: string;
+  hotlines: string[];
+  emergencyContactsNotified: boolean;
+  resolutionNote?: string;
+  resolvedAt?: string;
+  resolvedBy?: string;
+}
+

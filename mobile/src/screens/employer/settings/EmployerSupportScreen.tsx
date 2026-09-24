@@ -118,6 +118,21 @@ export const EmployerSupportScreen: React.FC<Props> = ({ navigation }) => {
             </View>
             <Text style={styles.chevron}>→</Text>
           </TouchableOpacity>
+
+          <View style={styles.divider} />
+
+          <TouchableOpacity
+            style={styles.menuRow}
+            onPress={() => navigation.navigate('SafetyCenter')}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.menuIcon}>🛡️</Text>
+            <View style={styles.menuTextGroup}>
+              <Text style={styles.menuTitle}>Emergency SOS &amp; Trusted Contacts</Text>
+              <Text style={styles.menuDesc}>Manage emergency contacts, 112/767 hotlines, SOS test mode</Text>
+            </View>
+            <Text style={styles.chevron}>→</Text>
+          </TouchableOpacity>
         </Card>
 
         {/* 2. Privacy & Regulatory Compliance */}

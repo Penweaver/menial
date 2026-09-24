@@ -23,6 +23,7 @@ import { WorkerSupportScreen } from '../screens/worker/settings/WorkerSupportScr
 import { WorkerPersonalDetailsScreen } from '../screens/worker/settings/WorkerPersonalDetailsScreen';
 import { WorkerReputationScreen } from '../screens/worker/settings/WorkerReputationScreen';
 import { WorkerDeleteAccountScreen } from '../screens/worker/settings/WorkerDeleteAccountScreen';
+import { SafetyCenterScreen } from '../screens/shared/SafetyCenterScreen';
 
 const Tab = createBottomTabNavigator<WorkerTabParamList>();
 const Stack = createNativeStackNavigator<WorkerProfileStackParamList>();
@@ -273,6 +274,22 @@ const WorkerProfileHomeScreen: React.FC<ProfileHomeScreenProps> = ({ navigation 
           </View>
         </Card>
 
+        <Card
+          style={styles.menuCard}
+          onPress={() => navigation.navigate('SafetyCenter')}
+        >
+          <View style={styles.menuCardRow}>
+            <Text style={styles.menuIcon}>🛡️</Text>
+            <View style={styles.menuTextGroup}>
+              <Text style={styles.menuTitle}>Emergency SOS &amp; Trusted Contacts</Text>
+              <Text style={styles.menuDesc}>
+                Manage emergency contacts, 112/767 hotlines, SOS test mode
+              </Text>
+            </View>
+            <Text style={styles.chevron}>→</Text>
+          </View>
+        </Card>
+
         {/* 4. Danger Zone & Account Management Section */}
         <Text style={styles.sectionHeader}>ACCOUNT MANAGEMENT &amp; SECURITY</Text>
         <View style={styles.actionCard}>
@@ -390,6 +407,7 @@ const WorkerProfileStackNavigator: React.FC = () => {
       <Stack.Screen name="PayoutSettings" component={WorkerPayoutSettingsScreen} />
       <Stack.Screen name="Preferences" component={WorkerPreferencesScreen} />
       <Stack.Screen name="Support" component={WorkerSupportScreen} />
+      <Stack.Screen name="SafetyCenter" component={SafetyCenterScreen} />
       <Stack.Screen name="DeleteAccount" component={WorkerDeleteAccountScreen} />
     </Stack.Navigator>
   );

@@ -33,6 +33,7 @@ import { EmployerHiringHistoryScreen } from '../screens/employer/settings/Employ
 import { EmployerPreferencesScreen } from '../screens/employer/settings/EmployerPreferencesScreen';
 import { EmployerSupportScreen } from '../screens/employer/settings/EmployerSupportScreen';
 import { EmployerDeleteAccountScreen } from '../screens/employer/settings/EmployerDeleteAccountScreen';
+import { SafetyCenterScreen } from '../screens/shared/SafetyCenterScreen';
 
 const Tab = createBottomTabNavigator<EmployerTabParamList>();
 const CreateJobStack = createNativeStackNavigator<EmployerCreateJobStackParamList>();
@@ -270,6 +271,22 @@ const EmployerProfileHomeScreen: React.FC<ProfileHomeScreenProps> = ({ navigatio
           </View>
         </Card>
 
+        <Card
+          style={styles.menuCard}
+          onPress={() => navigation.navigate('SafetyCenter')}
+        >
+          <View style={styles.menuCardRow}>
+            <Text style={styles.menuIcon}>🛡️</Text>
+            <View style={styles.menuTextGroup}>
+              <Text style={styles.menuTitle}>Emergency SOS &amp; Trusted Contacts</Text>
+              <Text style={styles.menuDesc}>
+                Manage emergency contacts, 112/767 hotlines, SOS test mode
+              </Text>
+            </View>
+            <Text style={styles.chevron}>→</Text>
+          </View>
+        </Card>
+
         {/* 4. Danger Zone & Account Operations */}
         <Text style={styles.sectionHeader}>ACCOUNT MANAGEMENT &amp; SECURITY</Text>
         <View style={styles.actionCard}>
@@ -365,6 +382,7 @@ export const EmployerProfileStackNavigator: React.FC = () => {
       <ProfileStack.Screen name="HiringHistory" component={EmployerHiringHistoryScreen} />
       <ProfileStack.Screen name="Preferences" component={EmployerPreferencesScreen} />
       <ProfileStack.Screen name="Support" component={EmployerSupportScreen} />
+      <ProfileStack.Screen name="SafetyCenter" component={SafetyCenterScreen} />
       <ProfileStack.Screen name="DeleteAccount" component={EmployerDeleteAccountScreen} />
     </ProfileStack.Navigator>
   );

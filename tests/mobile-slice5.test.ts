@@ -187,11 +187,11 @@ async function runSlice5Tests() {
   const recordedReport = ApiService.getSosReport(sosRes.reportId);
   assert(recordedReport !== undefined, 'SOS incident record saved in TrustSafety dossier');
   assert(
-    recordedReport?.description.includes('Suspicious and threatening behavior'),
+    Boolean(recordedReport?.description.includes('Suspicious and threatening behavior')),
     'SOS incident captures user-submitted incident description'
   );
   assert(
-    recordedReport?.latitude === 6.4380 && recordedReport?.longitude === 3.4280,
+    Boolean(recordedReport?.latitude === 6.4380 && recordedReport?.longitude === 3.4280),
     'SOS incident captures GPS coordinates (§49)'
   );
 

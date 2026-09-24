@@ -54,6 +54,7 @@ export type EmployerProfileStackParamList = {
   HiringHistory: undefined;
   Preferences: undefined;
   Support: undefined;
+  SafetyCenter: undefined;
   DeleteAccount: undefined;
 };
 
@@ -74,5 +75,6 @@ export type WorkerProfileStackParamList = {
   PayoutSettings: undefined;
   Preferences: undefined;
   Support: undefined;
+  SafetyCenter: undefined;
   DeleteAccount: undefined;
 };
