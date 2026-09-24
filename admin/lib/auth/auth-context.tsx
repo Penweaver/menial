@@ -4,7 +4,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import type { User } from '@supabase/supabase-js';
 import { getSupabaseBrowserClient, toDatabaseClient } from '../supabase/client';
 import { getAdminUserContext, type AdminUserContext } from './admin-auth';
-import type { AdminPermission } from '@shared/auth/rbac';
+import type { AdminPermissionKey } from '@shared/auth/rbac';
 import { AdminService } from '@shared/services/admin/AdminService';
 
 interface LoginResult {
@@ -39,7 +39,7 @@ function buildDemoContext(role: 'superadmin' | 'operations' | 'finance' | 'suppo
     email: `${role}@menial.ng`,
   };
 
-  let permissions: AdminPermission[] = [];
+  let permissions: AdminPermissionKey[] = [];
   let isSuperadmin = false;
 
   if (role === 'superadmin') {
