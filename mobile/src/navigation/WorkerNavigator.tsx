@@ -7,6 +7,7 @@ import { Button } from '../components/common/Button';
 import { Badge } from '../components/common/Badge';
 import { Card } from '../components/common/Card';
 import { TopBar } from '../components/common/TopBar';
+import { ScreenFooter } from '../components/common/ScreenFooter';
 import { useAuth } from '../context/AuthContext';
 import { WorkerProvider, useWorker } from '../context/WorkerContext';
 import { WorkerTabParamList, WorkerProfileStackParamList } from './types';
@@ -230,6 +231,9 @@ const WorkerProfileHomeScreen: React.FC<ProfileHomeScreenProps> = ({ navigation 
           onPress={logout}
           style={styles.logoutButton}
         />
+
+        {/* Clean Standardized Screen Footer */}
+        <ScreenFooter variant="compact" />
       </ScrollView>
     </View>
   );

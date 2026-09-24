@@ -10,6 +10,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Colors, Typography, Spacing, Radii } from '../../../constants/theme';
 import { TopBar } from '../../../components/common/TopBar';
 import { Card } from '../../../components/common/Card';
+import { ScreenFooter } from '../../../components/common/ScreenFooter';
 import { useWorker } from '../../../context/WorkerContext';
 import { WorkerProfileStackParamList } from '../../../navigation/types';
 
@@ -97,6 +98,8 @@ export const WorkerPreferencesScreen: React.FC<Props> = ({ navigation }) => {
             />
           </View>
         </Card>
+        {/* Clean Standardized Screen Footer */}
+        <ScreenFooter variant="compact" />
       </ScrollView>
     </View>
   );

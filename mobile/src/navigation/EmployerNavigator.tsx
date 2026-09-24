@@ -6,6 +6,7 @@ import { Colors, Typography, Spacing, Radii } from '../constants/theme';
 import { Button } from '../components/common/Button';
 import { Badge } from '../components/common/Badge';
 import { TopBar } from '../components/common/TopBar';
+import { ScreenFooter } from '../components/common/ScreenFooter';
 import { useAuth } from '../context/AuthContext';
 import { JobCreationProvider, useJobCreation } from '../context/JobCreationContext';
 import {
@@ -88,6 +89,9 @@ const EmployerProfileScreen: React.FC = () => {
           onPress={logout}
           style={styles.logoutButton}
         />
+
+        {/* Clean Standardized Screen Footer */}
+        <ScreenFooter variant="compact" />
       </ScrollView>
     </View>
   );

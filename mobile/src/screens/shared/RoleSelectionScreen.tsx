@@ -7,6 +7,7 @@ import { TopBar } from '../../components/common/TopBar';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
+import { ScreenFooter } from '../../components/common/ScreenFooter';
 import { useAuth } from '../../context/AuthContext';
 import { AuthStackParamList } from '../../navigation/types';
 import type { UserAccountType } from '@shared/types/enums';
@@ -102,6 +103,9 @@ export const RoleSelectionScreen: React.FC<RoleSelectionScreenProps> = ({
           disabled={!selectedRole}
           style={styles.submitButton}
         />
+
+        {/* Clean Standardized Screen Footer */}
+        <ScreenFooter variant="minimal" />
       </ScrollView>
     </View>
   );

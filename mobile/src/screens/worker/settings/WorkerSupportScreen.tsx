@@ -12,6 +12,7 @@ import { Colors, Typography, Spacing, Radii } from '../../../constants/theme';
 import { TopBar } from '../../../components/common/TopBar';
 import { Card } from '../../../components/common/Card';
 import { Button } from '../../../components/common/Button';
+import { ScreenFooter } from '../../../components/common/ScreenFooter';
 import { WorkerProfileStackParamList } from '../../../navigation/types';
 
 type Props = {
@@ -120,6 +121,9 @@ export const WorkerSupportScreen: React.FC<Props> = ({ navigation }) => {
             style={styles.privacyBtn}
           />
         </Card>
+
+        {/* Clean Standardized Screen Footer */}
+        <ScreenFooter variant="compact" />
       </ScrollView>
     </View>
   );

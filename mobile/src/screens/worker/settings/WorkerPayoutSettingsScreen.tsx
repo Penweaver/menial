@@ -14,6 +14,7 @@ import { Input } from '../../../components/common/Input';
 import { Button } from '../../../components/common/Button';
 import { Card } from '../../../components/common/Card';
 import { Badge } from '../../../components/common/Badge';
+import { ScreenFooter } from '../../../components/common/ScreenFooter';
 import { useWorker } from '../../../context/WorkerContext';
 import { ApiService } from '../../../services/api';
 import { WorkerProfileStackParamList } from '../../../navigation/types';
@@ -184,6 +185,9 @@ export const WorkerPayoutSettingsScreen: React.FC<Props> = ({ navigation }) => {
           disabled={accountNumber.length !== 10 || !resolvedName}
           style={styles.saveBtn}
         />
+
+        {/* Clean Standardized Screen Footer */}
+        <ScreenFooter variant="compact" />
       </ScrollView>
     </View>
   );

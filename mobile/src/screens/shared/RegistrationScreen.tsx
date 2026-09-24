@@ -12,6 +12,7 @@ import { Colors, Typography, Spacing, Radii } from '../../constants/theme';
 import { TopBar } from '../../components/common/TopBar';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
+import { ScreenFooter } from '../../components/common/ScreenFooter';
 import { SocialAuthButtons } from '../../components/auth/SocialAuthButtons';
 import { useAuth } from '../../context/AuthContext';
 import { AuthStackParamList } from '../../navigation/types';
@@ -303,18 +304,14 @@ export const RegistrationScreen: React.FC<RegistrationScreenProps> = ({ navigati
           />
         </View>
 
-        {/* Minimal Terms Note */}
-        <Text style={styles.termsNote}>
-          By signing up, you agree to our Terms of Service &amp; NDPA Privacy Policy.
-        </Text>
-
-        {/* Footer Link to Login */}
-        <View style={styles.footerLinkRow}>
-          <Text style={styles.footerPrompt}>Already have an account? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-            <Text style={styles.footerLink}>Sign in</Text>
-          </TouchableOpacity>
-        </View>
+        {/* Clean Standardized Auth Screen Footer */}
+        <ScreenFooter
+          variant="auth"
+          termsNotice="By signing up, you agree to our Terms of Service & NDPA Privacy Policy."
+          authPrompt="Already have an account?"
+          authActionText="Sign in"
+          onAuthAction={() => navigation.navigate('Login')}
+        />
       </ScrollView>
     </View>
   );
@@ -462,30 +459,5 @@ const styles = StyleSheet.create({
   socialRow: {
     alignItems: 'center',
     marginBottom: Spacing.md,
-  },
-  termsNote: {
-    ...Typography.scale.bodySm,
-    color: Colors.textMuted,
-    fontSize: 11,
-    textAlign: 'center',
-    lineHeight: 16,
-    paddingHorizontal: Spacing.md,
-    marginBottom: Spacing.md,
-  },
-  footerLinkRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  footerPrompt: {
-    ...Typography.scale.bodySm,
-    color: Colors.textSecondary,
-    fontSize: 13,
-  },
-  footerLink: {
-    ...Typography.scale.labelMd,
-    color: Colors.primary,
-    fontWeight: '700',
-    fontSize: 13,
   },
 });

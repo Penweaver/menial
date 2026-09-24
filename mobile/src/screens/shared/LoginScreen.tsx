@@ -12,6 +12,7 @@ import { Colors, Typography, Spacing, Radii } from '../../constants/theme';
 import { TopBar } from '../../components/common/TopBar';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
+import { ScreenFooter } from '../../components/common/ScreenFooter';
 import { SocialAuthButtons } from '../../components/auth/SocialAuthButtons';
 import { useAuth } from '../../context/AuthContext';
 import { AuthStackParamList } from '../../navigation/types';
@@ -260,25 +261,17 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
           />
         </View>
 
-        {/* Footer Link to Registration */}
-        <View style={styles.footerLinkRow}>
-          <Text style={styles.footerPrompt}>Don't have an account? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Registration')}>
-            <Text style={styles.footerLink}>Sign up</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Discreet Test Account Shortcuts */}
-        <View style={styles.demoFooter}>
-          <Text style={styles.demoLabel}>Demo review mode:</Text>
-          <TouchableOpacity onPress={() => loginAsDemo('worker')}>
-            <Text style={styles.demoLink}>Worker</Text>
-          </TouchableOpacity>
-          <Text style={styles.demoDot}>•</Text>
-          <TouchableOpacity onPress={() => loginAsDemo('employer')}>
-            <Text style={styles.demoLink}>Employer</Text>
-          </TouchableOpacity>
-        </View>
+        {/* Clean Standardized Auth Screen Footer */}
+        <ScreenFooter
+          variant="auth"
+          authPrompt="Don't have an account?"
+          authActionText="Sign up"
+          onAuthAction={() => navigation.navigate('Registration')}
+          demoLinks={[
+            { label: 'Worker', onPress: () => loginAsDemo('worker'), emoji: '👷' },
+            { label: 'Employer', onPress: () => loginAsDemo('employer'), emoji: '🏢' },
+          ]}
+        />
       </ScrollView>
     </View>
   );
@@ -399,47 +392,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: Spacing.lg,
   },
-  footerLinkRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: Spacing.lg,
-  },
-  footerPrompt: {
-    ...Typography.scale.bodySm,
-    color: Colors.textSecondary,
-    fontSize: 13,
-  },
-  footerLink: {
-    ...Typography.scale.labelMd,
-    color: Colors.primary,
-    fontWeight: '700',
-    fontSize: 13,
-  },
-  demoFooter: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 6,
-    paddingTop: Spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-  },
-  demoLabel: {
-    ...Typography.scale.bodySm,
-    color: Colors.textMuted,
-    fontSize: 11,
-  },
-  demoLink: {
-    ...Typography.scale.labelSm,
-    color: Colors.primary,
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  demoDot: {
-    color: Colors.textMuted,
-    fontSize: 10,
-  },
+
   rateLimitCard: {
     flexDirection: 'row',
     alignItems: 'center',

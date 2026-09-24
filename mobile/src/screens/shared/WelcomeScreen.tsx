@@ -5,6 +5,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Colors, Typography, Spacing, Radii } from '../../constants/theme';
 import { Button } from '../../components/common/Button';
 import { Badge } from '../../components/common/Badge';
+import { ScreenFooter } from '../../components/common/ScreenFooter';
 import { useAuth } from '../../context/AuthContext';
 import { AuthStackParamList } from '../../navigation/types';
 
@@ -185,73 +186,8 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ navigation }) => {
           </View>
         </View>
 
-        {/* Comprehensive Institutional Trust & Regulatory Footer */}
-        <View style={styles.footerSection}>
-          <View style={styles.complianceCard}>
-            <View style={styles.complianceRow}>
-              <View style={styles.complianceBadge}>
-                <Text style={styles.complianceIcon}>🛡️</Text>
-                <View>
-                  <Text style={styles.complianceTitle}>NDPA 2023</Text>
-                  <Text style={styles.complianceSub}>Data Protection</Text>
-                </View>
-              </View>
-              <View style={styles.complianceDivider} />
-              <View style={styles.complianceBadge}>
-                <Text style={styles.complianceIcon}>🏦</Text>
-                <View>
-                  <Text style={styles.complianceTitle}>CBN-Compliant</Text>
-                  <Text style={styles.complianceSub}>Escrow Protected</Text>
-                </View>
-              </View>
-              <View style={styles.complianceDivider} />
-              <View style={styles.complianceBadge}>
-                <Text style={styles.complianceIcon}>🇳🇬</Text>
-                <View>
-                  <Text style={styles.complianceTitle}>NIMC &amp; BVN</Text>
-                  <Text style={styles.complianceSub}>Identity Verified</Text>
-                </View>
-              </View>
-            </View>
-          </View>
-
-          {/* 24/7 Rapid Operations Support Helpline */}
-          <View style={styles.supportRow}>
-            <Text style={styles.supportIcon}>📞</Text>
-            <Text style={styles.supportText}>
-              24/7 Lagos Ops Support: <Text style={styles.supportHighlight}>0800-MENIAL-NG</Text>
-            </Text>
-          </View>
-
-          {/* Quick Legal & Safety Links */}
-          <View style={styles.legalLinksRow}>
-            <TouchableOpacity activeOpacity={0.7}>
-              <Text style={styles.legalLink}>Terms of Service</Text>
-            </TouchableOpacity>
-            <Text style={styles.legalBullet}>•</Text>
-            <TouchableOpacity activeOpacity={0.7}>
-              <Text style={styles.legalLink}>Privacy Policy</Text>
-            </TouchableOpacity>
-            <Text style={styles.legalBullet}>•</Text>
-            <TouchableOpacity activeOpacity={0.7}>
-              <Text style={styles.legalLink}>Safety Guidelines</Text>
-            </TouchableOpacity>
-            <Text style={styles.legalBullet}>•</Text>
-            <TouchableOpacity activeOpacity={0.7}>
-              <Text style={styles.legalLink}>Worker Charter</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Attribution, Version & Copyright */}
-          <View style={styles.attributionBlock}>
-            <Text style={styles.copyrightText}>
-              © 2026 Menial Technologies Limited (RC 1948201)
-            </Text>
-            <Text style={styles.versionText}>
-              Version 1.0.0 (Release 2026.1) • Made with pride in Lagos, Nigeria
-            </Text>
-          </View>
-        </View>
+        {/* Clean Minimalist Institutional Trust & Regulatory Screen Footer */}
+        <ScreenFooter variant="landing" />
       </ScrollView>
     </View>
   );
@@ -479,108 +415,5 @@ const styles = StyleSheet.create({
     ...Typography.scale.labelSm,
     color: Colors.textPrimary,
     fontWeight: '700',
-  },
-  footerSection: {
-    marginTop: Spacing.xl,
-    paddingTop: Spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-    alignItems: 'center',
-    gap: Spacing.md,
-  },
-  complianceCard: {
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: Radii.lg,
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.sm,
-    width: '100%',
-  },
-  complianceRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  complianceBadge: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 4,
-  },
-  complianceIcon: {
-    fontSize: 18,
-  },
-  complianceTitle: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: Colors.textPrimary,
-  },
-  complianceSub: {
-    fontSize: 9,
-    color: Colors.textSecondary,
-    fontWeight: '500',
-  },
-  complianceDivider: {
-    width: 1,
-    height: 24,
-    backgroundColor: Colors.border,
-  },
-  supportRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: Colors.primaryContainer,
-    paddingVertical: 8,
-    paddingHorizontal: Spacing.md,
-    borderRadius: Radii.full,
-  },
-  supportIcon: {
-    fontSize: 14,
-  },
-  supportText: {
-    ...Typography.scale.labelSm,
-    color: Colors.textPrimary,
-    fontSize: 11,
-  },
-  supportHighlight: {
-    fontWeight: '800',
-    color: Colors.primary,
-  },
-  legalLinksRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  legalLink: {
-    ...Typography.scale.labelSm,
-    color: Colors.textSecondary,
-    fontSize: 11,
-    textDecorationLine: 'underline',
-  },
-  legalBullet: {
-    color: Colors.textMuted,
-    fontSize: 10,
-  },
-  attributionBlock: {
-    alignItems: 'center',
-    gap: 2,
-    marginTop: 2,
-  },
-  copyrightText: {
-    ...Typography.scale.bodySm,
-    color: Colors.textSecondary,
-    fontSize: 11,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  versionText: {
-    ...Typography.scale.bodySm,
-    color: Colors.textMuted,
-    fontSize: 10,
-    textAlign: 'center',
   },
 });

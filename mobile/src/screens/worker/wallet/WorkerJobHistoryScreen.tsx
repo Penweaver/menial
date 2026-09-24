@@ -12,6 +12,7 @@ import { Card } from '../../../components/common/Card';
 import { Badge } from '../../../components/common/Badge';
 import { TopBar } from '../../../components/common/TopBar';
 import { Button } from '../../../components/common/Button';
+import { ScreenFooter } from '../../../components/common/ScreenFooter';
 import { ApiService } from '../../../services/api';
 import { JobRatingModal } from '../../../components/trust/JobRatingModal';
 
@@ -159,6 +160,9 @@ export const WorkerJobHistoryScreen: React.FC = () => {
             );
           })
         )}
+
+        {/* Clean Standardized Screen Footer */}
+        <ScreenFooter variant="compact" />
       </ScrollView>
 
       {/* Post-Job Rating Modal */}

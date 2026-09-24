@@ -15,6 +15,7 @@ import { Button } from '../../../components/common/Button';
 import { Card } from '../../../components/common/Card';
 import { Badge } from '../../../components/common/Badge';
 import { TopBar } from '../../../components/common/TopBar';
+import { ScreenFooter } from '../../../components/common/ScreenFooter';
 import {
   ApiService,
   WorkerEarningsSummary,
@@ -265,6 +266,9 @@ export const WorkerWalletScreen: React.FC = () => {
             );
           })
         )}
+
+        {/* Clean Standardized Screen Footer */}
+        <ScreenFooter variant="compact" />
       </ScrollView>
 
       {/* Withdrawal Modal */}
