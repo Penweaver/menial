@@ -10,7 +10,7 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const redirectUrl = searchParams.get('redirect');
 
-  const { login } = useAdminAuth();
+  const { login, loginAsDemo } = useAdminAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -154,7 +154,60 @@ function LoginForm() {
             </div>
           </form>
 
-          <div className="mt-6 border-t border-surface-border pt-4">
+          {/* Quick Demo Access Bar */}
+          <div className="mt-6 pt-5 border-t border-surface-border">
+            <div className="text-xs font-bold uppercase tracking-wider text-surface-muted text-center mb-3">
+              ⚡ Quick Interactive Demo Access
+            </div>
+            <div className="grid grid-cols-2 gap-2.5">
+              <button
+                type="button"
+                onClick={async () => {
+                  setIsSubmitting(true);
+                  await loginAsDemo('superadmin');
+                  router.push('/superadmin/overview');
+                }}
+                className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 rounded-lg text-xs font-bold transition-colors cursor-pointer"
+              >
+                👑 Superadmin
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  setIsSubmitting(true);
+                  await loginAsDemo('operations');
+                  router.push('/admin/overview');
+                }}
+                className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-surface-canvas hover:bg-surface-border text-surface-dark border border-surface-border rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+              >
+                🛡️ Operations Admin
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  setIsSubmitting(true);
+                  await loginAsDemo('finance');
+                  router.push('/admin/payouts');
+                }}
+                className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-surface-canvas hover:bg-surface-border text-surface-dark border border-surface-border rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+              >
+                💳 Finance Admin
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  setIsSubmitting(true);
+                  await loginAsDemo('support');
+                  router.push('/admin/disputes');
+                }}
+                className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-surface-canvas hover:bg-surface-border text-surface-dark border border-surface-border rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+              >
+                🤝 Support Admin
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-5 border-t border-surface-border pt-4">
             <div className="flex items-center justify-between text-xs text-surface-muted">
               <span>Have an invite token?</span>
               <a
