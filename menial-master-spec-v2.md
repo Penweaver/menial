@@ -214,7 +214,7 @@ Menial should communicate:
 Workers must be represented as professionals providing valuable services.
 
 Existing design system:
-* Deep Forest Emerald: #0B4F37
+* Electric Royal Cobalt: #1A4FEE (Core brand hue per official logo assets)
 * Mint/Jade: #10B981
 * Warm neutral backgrounds
 * White surfaces

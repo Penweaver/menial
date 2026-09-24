@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, Image } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Colors, Typography, Spacing } from '../../constants/theme';
 import { useAuth } from '../../context/AuthContext';
@@ -32,7 +32,11 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <View style={styles.brandContainer}>
-        <Text style={styles.brandTitle}>menial</Text>
+        <Image
+          source={require('../../../assets/logo-white.png')}
+          style={styles.splashLogo}
+          resizeMode="contain"
+        />
         <Text style={styles.brandTagline}>Dignified Utility</Text>
       </View>
       <View style={styles.footer}>
@@ -56,12 +60,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  brandTitle: {
-    fontSize: 48,
-    lineHeight: 56,
-    fontWeight: '800',
-    color: Colors.primaryOn,
-    letterSpacing: -1,
+  splashLogo: {
+    width: 220,
+    height: 60,
+    marginBottom: Spacing.xs,
   },
   brandTagline: {
     ...Typography.scale.labelLg,

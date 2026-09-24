@@ -5,6 +5,13 @@ import { AuthProvider } from '@/lib/auth/auth-context';
 export const metadata: Metadata = {
   title: 'Menial — Admin & Superadmin Console',
   description: 'Enterprise operations command and platform governance console for Menial',
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/favicon.png', type: 'image/png', sizes: '32x32' },
+    ],
+    apple: '/apple-touch-icon.png',
+  },
 };
 
 export default function RootLayout({

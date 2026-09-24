@@ -42,13 +42,8 @@ export function SuperadminHeader() {
         {/* Brand & Security Clearance Cluster */}
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
-            <Link href="/superadmin/overview" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white shadow-xs">
-                <ShieldCheck className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-2xl font-extrabold text-primary tracking-tight font-sans">
-                menial
-              </span>
+            <Link href="/superadmin/overview" className="flex items-center gap-2.5">
+              <img src="/logo.png" alt="menial" className="h-6 w-auto object-contain" />
             </Link>
           </div>
 

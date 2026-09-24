@@ -84,11 +84,8 @@ function MfaEnrollContent() {
   return (
     <div className="min-h-screen bg-surface-canvas flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-lg">
-        <div className="flex justify-center items-center gap-2 mb-2">
-          <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center text-white shadow-header">
-            <ShieldCheck className="w-6 h-6 text-white" />
-          </div>
-          <span className="text-3xl font-extrabold text-primary tracking-tight">menial</span>
+        <div className="flex flex-col justify-center items-center mb-2">
+          <img src="/logo.png" alt="menial" className="h-10 w-auto mb-2" />
         </div>
         <h2 className="text-center text-xl font-bold text-surface-dark tracking-tight">
           Mandatory MFA Enrollment (§23)

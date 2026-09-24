@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Colors, Typography, Spacing, Radii } from '../../constants/theme';
@@ -28,14 +28,13 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ navigation }) => {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Top Header & Trust Status */}
+        {/* Top Header with Official Logo Image & Trust Status */}
         <View style={styles.header}>
-          <View style={styles.logoRow}>
-            <View style={styles.logoIcon}>
-              <Text style={styles.logoEmoji}>🛡️</Text>
-            </View>
-            <Text style={styles.brandTitle}>menial</Text>
-          </View>
+          <Image
+            source={require('../../../assets/logo.png')}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
           <View style={styles.trustPillRow}>
             <Badge label="NIN / BVN VERIFIED" type="verified" icon="🇳🇬" />
             <Badge label="ESCROW PROTECTED" type="escrow" icon="🔒" />
@@ -208,28 +207,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: Spacing.lg,
   },
-  logoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
+  logoImage: {
+    width: 180,
+    height: 52,
     marginBottom: Spacing.xs,
-  },
-  logoIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: Radii.md,
-    backgroundColor: Colors.primaryContainer,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoEmoji: {
-    fontSize: 20,
-  },
-  brandTitle: {
-    fontSize: 34,
-    fontWeight: '800',
-    color: Colors.primary,
-    letterSpacing: -1,
   },
   trustPillRow: {
     flexDirection: 'row',

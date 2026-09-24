@@ -45,7 +45,7 @@ export const Button: React.FC<ButtonProps> = ({
         style={[styles.base, disabled && styles.disabled, style]}
       >
         <LinearGradient
-          colors={['#0B4F37', '#10B981']}
+          colors={[Colors.primary, '#4F7EFA']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={[styles.inner, styles.gradientRadius]}

@@ -61,11 +61,8 @@ function LoginForm() {
     <div className="min-h-screen bg-surface-canvas flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         {/* Brand Header */}
-        <div className="flex justify-center items-center gap-2 mb-2">
-          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-header">
-            <Shield className="w-6 h-6 text-white" />
-          </div>
-          <span className="text-3xl font-extrabold text-primary tracking-tight">menial</span>
+        <div className="flex flex-col justify-center items-center mb-2">
+          <img src="/logo.png" alt="menial" className="h-11 w-auto mb-1.5" />
         </div>
         <h2 className="text-center text-xl font-bold text-surface-dark tracking-tight">
           Administrative Command Portal

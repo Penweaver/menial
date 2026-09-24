@@ -156,7 +156,7 @@ export const WorkerWalletScreen: React.FC = () => {
       <TopBar title="Earnings & Wallet" />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Forest Emerald Balance Hero Card */}
+        {/* Electric Royal Cobalt Balance Hero Card */}
         <View style={styles.heroCard}>
           <View style={styles.heroTopRow}>
             <Text style={styles.heroLabel}>AVAILABLE BALANCE</Text>
@@ -396,7 +396,7 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING.xxl,
   },
   heroCard: {
-    backgroundColor: COLORS.primary, // Forest Emerald #0B4F37
+    backgroundColor: COLORS.primary, // Electric Royal Cobalt #1A4FEE
     borderRadius: RADIUS.xl,
     padding: SPACING.xl,
     marginBottom: SPACING.lg,

@@ -29,7 +29,7 @@ The key discrepancies flagged below **must be aligned to the Master Spec (Sectio
 
 | Design Token / Element | Master Spec (Section 7 Truth) | Stitch MCP Auto-Generated | Audit Result & Required Alignment |
 | :--- | :--- | :--- | :--- |
-| **Primary Brand Color** | `#0B4F37`<br>*(Deep Forest Emerald)* | `#003624`<br>*(Very dark green / near-black)* | ⚠️ **Discrepancy:** Stitch assigned `#003624` as `primary` and used `#0B4F37` for `primary-container`. **Override:** Use `#0B4F37` as core `primary` for all main CTAs, headers, and active states. |
+| **Primary Brand Color** | `#1A4FEE`<br>*(Electric Royal Cobalt)* | `#003624`<br>*(Legacy MD3 green)* | ⚠️ **Brand Identity Update:** Official logo and app icon establish `#1A4FEE` (Electric Royal Cobalt) as core brand hue. **Enforce:** Use `#1A4FEE` as core `primary` for all main CTAs, headers, and active states. |
 | **Secondary Color** | `#10B981`<br>*(Mint / Jade Kinetic Green)* | `#006C49`<br>*(Darker emerald shade)* | ⚠️ **Discrepancy:** Stitch MD3 palette mapped `secondary` to `#006C49` (though `#10B981` is in overrides). **Override:** Use `#10B981` strictly for verified badges, biometric checks, active online dots, and success. |
 | **Tertiary Accent** | `#F59E0B`<br>*(Amber Gold)* | `#452900` / `#633d00`<br>*(Dark brown/amber)* | ⚠️ **Discrepancy:** Stitch auto-generated dark brown tertiary tokens. **Override:** Enforce vibrant `#F59E0B` for skill ratings, review stars, escrow hold warnings, and urgent alerts. |
 | **Background / Canvas** | `#F8FAFC`<br>*(Slate-50 Warm Off-White)* | `#FAF8FF`<br>*(Cool/Lavender tinted white)* | ⚠️ **Discrepancy:** Stitch generated a purple/cool-tinted canvas. **Override:** Standardize on neutral Slate-50 `#F8FAFC` to eliminate glare under outdoor sunlight. |
@@ -48,7 +48,7 @@ The color system leverages deep psychological associations with prosperity, stab
 ### Color Tokens & Usage Specification
 
 ```
-├── Primary: Deep Forest Emerald (#0B4F37)   ──► Core Brand, App Bars, Main CTAs
+├── Primary: Electric Royal Cobalt (#1A4FEE) ──► Core Brand, App Bars, Main CTAs
 ├── Secondary: Mint / Jade (#10B981)         ──► Verification Badges, Success, Online Dots
 ├── Tertiary: Amber Gold (#F59E0B)           ──► Ratings (Stars), Escrow Hold, Warnings
 ├── Neutral Dark: Midnight Slate (#0F172A)   ──► Headings, High-Contrast Body Text
@@ -58,9 +58,10 @@ The color system leverages deep psychological associations with prosperity, stab
 
 #### Detailed Color Roles
 
-* **Primary (`#0B4F37` — Deep Forest Emerald):**
+* **Primary (`#1A4FEE` — Electric Royal Cobalt):**
   * *Roles:* Main application bar background, primary action buttons (`ButtonFilled`), active tab/nav states, brand headers, active radio buttons.
   * *On-Primary:* `#FFFFFF` (Pure White).
+  * *Container Fill:* `#EBF1FE` (Soft Cobalt 50 tint), *Hover:* `#1440C7`.
 * **Secondary (`#10B981` — Mint Jade):**
   * *Roles:* Verified worker shield badges, biometric checkmarks, active "Available Now" indicators, cashout success toasts, completed job pills.
   * *Container Fill:* `#ECFDF5` (Mint 50 tint), *Text/Icon:* `#065F46`.
@@ -145,17 +146,17 @@ To maintain extreme clarity in bright outdoor environments, visual hierarchy rel
 
 1. **Primary Action Button:**
    * *Height:* 52px (Full-width on mobile).
-   * *Background:* Deep Forest Emerald (`#0B4F37`).
+   * *Background:* Electric Royal Cobalt (`#1A4FEE`).
    * *Text:* `#FFFFFF`, `label-lg` (15px SemiBold).
    * *Radius:* 12px (`rounded-md` / `rounded-xl`).
    * *Touch Target:* Padded hit area 52px. Active state scales down `scale(0.98)`.
 2. **Secondary Outlined Button:**
    * *Height:* 52px.
    * *Background:* `#FFFFFF`.
-   * *Border:* `1.5px solid #0B4F37`.
-   * *Text:* `#0B4F37`, `label-lg`.
+   * *Border:* `1.5px solid #1A4FEE`.
+   * *Text:* `#1A4FEE`, `label-lg`.
 3. **Escrow / Cash Out Button (Kinetic CTA):**
-   * *Background:* Linear gradient `linear-gradient(135deg, #0B4F37 0%, #10B981 100%)`.
+   * *Background:* Linear gradient `linear-gradient(135deg, #1A4FEE 0%, #4F7EFA 100%)`.
    * *Text:* Crisp `#FFFFFF` with embedded Naira value in tabular figures.
 
 ### Form Inputs
@@ -164,7 +165,7 @@ To maintain extreme clarity in bright outdoor environments, visual hierarchy rel
 * *Background:* `#F8FAFC` (Slate 50).
 * *Border:* `1.5px solid #E2E8F0`.
 * *Text:* `body-lg` (16px) in `#0F172A`.
-* *Focus State:* `border: 2px solid #0B4F37` with inner surface turning `#FFFFFF`.
+* *Focus State:* `border: 2px solid #1A4FEE` with inner surface turning `#FFFFFF`.
 * *Touch Ergonomics:* Clear button `(X)` and password visibility toggles strictly padded to 48x48px touch targets.
 
 ### Trust Chips & Verification Badges

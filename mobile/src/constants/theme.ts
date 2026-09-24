@@ -7,9 +7,9 @@
 
 export const Colors = {
   // Brand Palette
-  primary: '#0B4F37',          // Deep Forest Emerald (Core brand, CTAs, headers)
-  primaryOn: '#FFFFFF',        // Pure white on emerald
-  primaryContainer: '#E8F5E9', // Soft emerald tint
+  primary: '#1A4FEE',          // Electric Royal Cobalt (Core brand, CTAs, headers)
+  primaryOn: '#FFFFFF',        // Pure white on cobalt
+  primaryContainer: '#EBF1FE', // Soft cobalt blue tint
   
   secondary: '#10B981',        // Mint / Jade (Verification shields, biometric checkmarks, active status)
   secondaryContainer: '#ECFDF5',
@@ -33,7 +33,7 @@ export const Colors = {
   surface: '#FFFFFF',          // Card base surface
   surfaceSubtle: '#F1F5F9',    // Slate-100 Input background
   border: '#E2E8F0',           // 1px standard border
-  borderActive: '#0B4F37',     // Active focus border
+  borderActive: '#1A4FEE',     // Active focus border
 
   // Text Hierarchy
   textPrimary: '#0F172A',      // Midnight Slate (100% contrast reading text)

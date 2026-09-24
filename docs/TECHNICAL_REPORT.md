@@ -247,7 +247,7 @@ npm run typecheck
 The visual layer is governed by the **"Dignified Utility"** design system, tailored specifically for high ambient sunlight, low-tier Android displays, and physical outdoor labor realities.
 
 ### 9.1 Visual Tokens Summary
-- **Primary Brand Color:** `#0B4F37` (Deep Forest Emerald)
+- **Primary Brand Color:** `#1A4FEE` (Electric Royal Cobalt)
 - **Accent / Kinetic Color:** `#10B981` (Mint Jade)
 - **Warning / Rating Color:** `#F59E0B` (Amber Gold)
 - **Reading Base:** `#0F172A` (Midnight Slate)

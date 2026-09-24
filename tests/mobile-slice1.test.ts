@@ -246,7 +246,7 @@ async function runSlice1Tests() {
   // TEST 6: Design System & Currency Formatting (DESIGN.md)
   // --------------------------------------------------------------------------
   console.log('\n--- 6. DESIGN SYSTEM TOKENS (DESIGN.md) ---');
-  assert(Colors.primary === '#0B4F37', 'Primary brand color is #0B4F37 (Deep Forest Emerald)');
+  assert(Colors.primary === '#1A4FEE', 'Primary brand color is #1A4FEE (Electric Royal Cobalt)');
   assert(Colors.secondary === '#10B981', 'Secondary color is #10B981 (Mint/Jade)');
   assert(Colors.tertiary === '#F59E0B', 'Tertiary color is #F59E0B (Amber Gold)');
   assert(Colors.canvas === '#F8FAFC', 'Canvas color is #F8FAFC (Slate-50 Warm Off-White)');

@@ -10,14 +10,14 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // DESIGN.md Spec Overrides
+        // Electric Royal Cobalt Brand Palette
         primary: {
-          DEFAULT: '#0B4F37', // Deep Forest Emerald
-          hover: '#083D2A',
-          container: '#0B4F37',
+          DEFAULT: '#1A4FEE', // Electric Royal Cobalt (from logo)
+          hover: '#1440C7',
+          container: '#1A4FEE',
           'on-container': '#FFFFFF',
-          fixed: '#B1F0CF',
-          light: '#E6F4EA',
+          fixed: '#C9D8FC',
+          light: '#EBF1FE',
         },
         secondary: {
           DEFAULT: '#10B981', // Mint / Jade Kinetic Green
@@ -59,7 +59,7 @@ const config: Config = {
       boxShadow: {
         xs: '0 1px 2px rgba(15, 23, 42, 0.04)',
         card: '0 2px 4px rgba(15, 23, 42, 0.04)',
-        header: '0 4px 12px rgba(11, 79, 55, 0.06)',
+        header: '0 4px 12px rgba(26, 79, 238, 0.06)',
         modal: '0 12px 32px rgba(15, 23, 42, 0.12)',
       },
       spacing: {

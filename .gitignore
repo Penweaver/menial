@@ -50,3 +50,11 @@ yarn-error.log*
 *.swo
 .DS_Store
 Thumbs.db
+
+# TypeScript Build Info
+*.tsbuildinfo
+
+# Expo / React Native Scaffolding
+mobile/android/
+mobile/ios/
+

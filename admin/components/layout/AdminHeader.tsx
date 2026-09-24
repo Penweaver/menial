@@ -62,10 +62,8 @@ export function AdminHeader() {
       {/* Left Brand & Telemetry Cluster */}
       <div className="flex items-center gap-5">
         <div className="flex items-center gap-2">
-          <Link href="/admin/overview" className="flex items-center gap-2 group">
-            <span className="text-2xl font-extrabold text-primary tracking-tight font-sans">
-              menial
-            </span>
+          <Link href="/admin/overview" className="flex items-center gap-2.5 group">
+            <img src="/logo.png" alt="menial" className="h-6 w-auto object-contain" />
             <span className="bg-primary text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">
               Admin Ops
             </span>
