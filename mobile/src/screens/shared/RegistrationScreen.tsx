@@ -13,7 +13,8 @@ import { TopBar } from '../../components/common/TopBar';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import { ScreenFooter } from '../../components/common/ScreenFooter';
-import { SocialAuthButtons } from '../../components/auth/SocialAuthButtons';
+import { SegmentedControl } from '../../components/common/SegmentedControl';
+import { SocialAuthButtons, SocialProvider } from '../../components/auth/SocialAuthButtons';
 import { useAuth } from '../../context/AuthContext';
 import { AuthStackParamList } from '../../navigation/types';
 import type { UserAccountType } from '@shared/types/enums';
@@ -42,7 +43,7 @@ export const RegistrationScreen: React.FC<RegistrationScreenProps> = ({ navigati
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [socialLoading, setSocialLoading] = useState<'google' | 'facebook' | 'linkedin' | null>(null);
+  const [socialLoading, setSocialLoading] = useState<SocialProvider | null>(null);
 
   // Phone OTP Flow
   const handleRegisterPhone = async () => {
@@ -100,7 +101,7 @@ export const RegistrationScreen: React.FC<RegistrationScreenProps> = ({ navigati
   };
 
   // Social Auth Flow (Icon-only)
-  const handleSocialSignUp = async (provider: 'google' | 'facebook' | 'linkedin') => {
+  const handleSocialSignUp = async (provider: SocialProvider) => {
     setError(null);
     setSocialLoading(provider);
     const result = await loginWithSocial(provider, selectedRole);
@@ -137,37 +138,16 @@ export const RegistrationScreen: React.FC<RegistrationScreenProps> = ({ navigati
           </View>
         )}
 
-        {/* Minimal Role Pill Selector */}
-        <View style={styles.roleToggle}>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => setSelectedRole('worker')}
-            style={[styles.roleBtn, selectedRole === 'worker' && styles.roleBtnActive]}
-          >
-            <Text
-              style={[
-                styles.roleText,
-                selectedRole === 'worker' && styles.roleTextActive,
-              ]}
-            >
-              👷 I Want to Work
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => setSelectedRole('employer')}
-            style={[styles.roleBtn, selectedRole === 'employer' && styles.roleBtnActive]}
-          >
-            <Text
-              style={[
-                styles.roleText,
-                selectedRole === 'employer' && styles.roleTextActive,
-              ]}
-            >
-              🏢 I Want to Hire
-            </Text>
-          </TouchableOpacity>
-        </View>
+        {/* Standardized Role Selector */}
+        <SegmentedControl<UserAccountType>
+          options={[
+            { key: 'worker', label: 'I Want to Work', icon: '👷' },
+            { key: 'employer', label: 'I Want to Hire', icon: '🏢' },
+          ]}
+          selectedKey={selectedRole}
+          onSelect={setSelectedRole}
+          style={styles.roleToggle}
+        />
 
         {/* Full Legal Name */}
         <Input
@@ -181,43 +161,19 @@ export const RegistrationScreen: React.FC<RegistrationScreenProps> = ({ navigati
           onClear={() => setFullName('')}
         />
 
-        {/* Method Toggle: Phone vs Email */}
-        <View style={styles.methodToggle}>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => {
-              setAuthMethod('phone');
-              setError(null);
-            }}
-            style={[styles.toggleBtn, authMethod === 'phone' && styles.toggleBtnActive]}
-          >
-            <Text
-              style={[
-                styles.toggleText,
-                authMethod === 'phone' && styles.toggleTextActive,
-              ]}
-            >
-              Phone Number
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => {
-              setAuthMethod('email');
-              setError(null);
-            }}
-            style={[styles.toggleBtn, authMethod === 'email' && styles.toggleBtnActive]}
-          >
-            <Text
-              style={[
-                styles.toggleText,
-                authMethod === 'email' && styles.toggleTextActive,
-              ]}
-            >
-              Email Address
-            </Text>
-          </TouchableOpacity>
-        </View>
+        {/* Standardized Method Selector */}
+        <SegmentedControl<AuthMethod>
+          options={[
+            { key: 'phone', label: 'Phone Number' },
+            { key: 'email', label: 'Email Address' },
+          ]}
+          selectedKey={authMethod}
+          onSelect={(key) => {
+            setAuthMethod(key);
+            setError(null);
+          }}
+          style={styles.methodToggle}
+        />
 
         {/* Dynamic Fields */}
         {authMethod === 'phone' ? (
@@ -239,6 +195,8 @@ export const RegistrationScreen: React.FC<RegistrationScreenProps> = ({ navigati
             <Button
               title="Continue"
               onPress={handleRegisterPhone}
+              variant="primary"
+              size="lg"
               loading={loading}
               disabled={rateLimitState.isLocked || !fullName.trim() || phone.length < 10}
               style={styles.primaryBtn}
@@ -273,6 +231,9 @@ export const RegistrationScreen: React.FC<RegistrationScreenProps> = ({ navigati
               <TouchableOpacity
                 activeOpacity={0.7}
                 onPress={() => setShowPassword(!showPassword)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                accessibilityRole="button"
+                accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
                 style={styles.eyeToggle}
               >
                 <Text style={styles.eyeText}>{showPassword ? '👁️' : '🔒'}</Text>
@@ -282,6 +243,8 @@ export const RegistrationScreen: React.FC<RegistrationScreenProps> = ({ navigati
             <Button
               title="Create Account"
               onPress={handleRegisterEmail}
+              variant="primary"
+              size="lg"
               loading={loading}
               disabled={!fullName.trim() || !email || password.length < 6}
               style={styles.primaryBtn}

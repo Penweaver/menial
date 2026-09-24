@@ -220,6 +220,8 @@ export const EmployerCompanyDetailsScreen: React.FC<Props> = ({ navigation }) =>
         <Button
           title={isLoading ? 'Saving...' : 'Save Changes'}
           onPress={handleSave}
+          variant="primary"
+          size="lg"
           loading={isLoading}
           style={styles.saveButton}
         />

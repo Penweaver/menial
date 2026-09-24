@@ -228,6 +228,7 @@ export const WorkerDeleteAccountScreen: React.FC<Props> = ({ navigation }) => {
         <Button
           title={isDeleting ? 'Deleting Account...' : 'Permanently Delete Account'}
           variant="danger"
+          size="lg"
           onPress={handleConfirmDelete}
           loading={isDeleting}
           disabled={!canProceedWithDelete}
@@ -237,6 +238,7 @@ export const WorkerDeleteAccountScreen: React.FC<Props> = ({ navigation }) => {
         <Button
           title="Keep My Account"
           variant="outline"
+          size="lg"
           onPress={() => navigation.goBack()}
           style={styles.cancelBtn}
         />

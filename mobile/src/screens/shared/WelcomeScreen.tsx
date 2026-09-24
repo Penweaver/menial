@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Colors, Typography, Spacing, Radii } from '../../constants/theme';
+import { Colors, Typography, Spacing, Radii, Layout } from '../../constants/theme';
 import { Button } from '../../components/common/Button';
 import { Badge } from '../../components/common/Badge';
 import { ScreenFooter } from '../../components/common/ScreenFooter';
@@ -153,12 +153,15 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ navigation }) => {
           <Button
             title="Create New Account"
             onPress={() => navigation.navigate('Registration')}
+            variant="primary"
+            size="lg"
             style={styles.primaryButton}
           />
           <Button
             title="Log In with Phone Number"
             onPress={() => navigation.navigate('Login')}
             variant="outline"
+            size="lg"
             style={styles.secondaryButton}
           />
 
@@ -170,6 +173,8 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ navigation }) => {
                 activeOpacity={0.8}
                 onPress={() => loginAsDemo('employer')}
                 style={styles.demoBtn}
+                accessibilityRole="button"
+                accessibilityLabel="Enter as Employer"
               >
                 <Text style={styles.demoBtnEmoji}>🏢</Text>
                 <Text style={styles.demoBtnText}>Enter as Employer</Text>
@@ -178,6 +183,8 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ navigation }) => {
                 activeOpacity={0.8}
                 onPress={() => loginAsDemo('worker')}
                 style={styles.demoBtn}
+                accessibilityRole="button"
+                accessibilityLabel="Enter as Worker"
               >
                 <Text style={styles.demoBtnEmoji}>👷</Text>
                 <Text style={styles.demoBtnText}>Enter as Worker</Text>
@@ -404,6 +411,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
     borderRadius: Radii.md,
+    minHeight: Layout.minTouchTarget,
     paddingVertical: 10,
     paddingHorizontal: Spacing.xs,
     gap: 6,

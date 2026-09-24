@@ -280,6 +280,7 @@ const EmployerProfileHomeScreen: React.FC<ProfileHomeScreenProps> = ({ navigatio
           <Button
             title="Switch to Worker Mode"
             variant="outline"
+            size="md"
             onPress={() => selectRole('worker')}
             style={styles.switchButton}
           />
@@ -294,6 +295,7 @@ const EmployerProfileHomeScreen: React.FC<ProfileHomeScreenProps> = ({ navigatio
           <Button
             title="Sign Out"
             variant="outline"
+            size="md"
             onPress={() => setLogoutModalVisible(true)}
             style={styles.logoutBtn}
           />
@@ -332,6 +334,7 @@ const EmployerProfileHomeScreen: React.FC<ProfileHomeScreenProps> = ({ navigatio
             <Button
               title={loggingOut ? 'Signing out...' : 'Confirm Log Out'}
               variant="danger"
+              size="lg"
               onPress={handleConfirmLogout}
               loading={loggingOut}
               style={styles.modalLogoutBtn}
@@ -340,6 +343,7 @@ const EmployerProfileHomeScreen: React.FC<ProfileHomeScreenProps> = ({ navigatio
             <Button
               title="Cancel"
               variant="outline"
+              size="lg"
               onPress={() => setLogoutModalVisible(false)}
               disabled={loggingOut}
               style={styles.modalCancelBtn}

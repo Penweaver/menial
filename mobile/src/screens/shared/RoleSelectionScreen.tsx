@@ -99,6 +99,8 @@ export const RoleSelectionScreen: React.FC<RoleSelectionScreenProps> = ({
         <Button
           title={selectedRole ? `Continue as ${selectedRole === 'employer' ? 'Employer' : 'Worker'}` : 'Select a Role'}
           onPress={handleConfirmRole}
+          variant="primary"
+          size="lg"
           loading={loading}
           disabled={!selectedRole}
           style={styles.submitButton}

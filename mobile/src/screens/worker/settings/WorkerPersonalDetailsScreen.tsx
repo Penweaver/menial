@@ -178,6 +178,8 @@ export const WorkerPersonalDetailsScreen: React.FC<Props> = ({ navigation }) => 
         <Button
           title="Save Details"
           onPress={handleSave}
+          variant="primary"
+          size="lg"
           loading={isLoading}
           style={styles.saveBtn}
         />

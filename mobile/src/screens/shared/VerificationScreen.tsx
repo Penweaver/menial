@@ -114,6 +114,8 @@ export const VerificationScreen: React.FC<VerificationScreenProps> = ({
         <Button
           title="Verify & Continue"
           onPress={handleVerify}
+          variant="primary"
+          size="lg"
           loading={loading}
           disabled={code.length !== 6}
           style={styles.submitButton}
@@ -127,6 +129,10 @@ export const VerificationScreen: React.FC<VerificationScreenProps> = ({
             <TouchableOpacity
               onPress={handleResend}
               disabled={rateLimitState.isLocked}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              accessibilityRole="button"
+              accessibilityLabel="Resend verification code"
+              accessibilityState={{ disabled: rateLimitState.isLocked }}
             >
               <Text
                 style={[

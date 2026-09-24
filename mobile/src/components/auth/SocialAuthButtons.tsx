@@ -1,28 +1,59 @@
+/**
+ * Menial Mobile - Standardized Social Authentication Buttons
+ * 
+ * Minimalist, high-craft, icon-only social auth conforming to
+ * Apple Human Interface Guidelines, Google Identity Standards, and WCAG 2.2 accessibility.
+ * 
+ * Supported Providers: Google (Gmail), Apple, Facebook, LinkedIn.
+ * Ergonomics: 50x50dp touch targets (WCAG 2.5.5 minimum 48x48dp compliant).
+ */
+
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ActivityIndicator,
+} from 'react-native';
 import { Colors, Typography, Spacing, Radii } from '../../constants/theme';
 
+export type SocialProvider = 'google' | 'apple' | 'facebook' | 'linkedin';
+
 export interface SocialAuthButtonsProps {
-  onSelectProvider: (provider: 'google' | 'facebook' | 'linkedin') => void;
-  loadingProvider?: 'google' | 'facebook' | 'linkedin' | null;
+  onSelectProvider: (provider: SocialProvider) => void;
+  loadingProvider?: SocialProvider | null;
 }
 
 export const SocialAuthButtons: React.FC<SocialAuthButtonsProps> = ({
   onSelectProvider,
   loadingProvider = null,
 }) => {
+  const isAnyLoading = Boolean(loadingProvider);
+
   return (
-    <View style={styles.container}>
-      {/* Google (Gmail) Icon Button */}
+    <View
+      style={styles.container}
+      accessibilityRole="toolbar"
+      accessibilityLabel="Social authentication options"
+    >
+      {/* 1. Google (Gmail) Icon Button */}
       <TouchableOpacity
-        activeOpacity={0.8}
+        activeOpacity={0.78}
         onPress={() => onSelectProvider('google')}
-        disabled={!!loadingProvider}
-        style={[styles.iconBtn, styles.googleBtn]}
+        disabled={isAnyLoading}
+        style={[
+          styles.iconBtn,
+          styles.googleBtn,
+          loadingProvider === 'google' && styles.iconBtnActive,
+        ]}
+        accessibilityRole="button"
         accessibilityLabel="Sign in with Google"
+        accessibilityHint="Authenticate using your Google account"
+        accessibilityState={{ disabled: isAnyLoading, busy: loadingProvider === 'google' }}
       >
         {loadingProvider === 'google' ? (
-          <ActivityIndicator size="small" color={Colors.textPrimary} />
+          <ActivityIndicator size="small" color="#EA4335" />
         ) : (
           <View style={styles.googleIconBox}>
             <Text style={styles.googleG}>G</Text>
@@ -30,13 +61,42 @@ export const SocialAuthButtons: React.FC<SocialAuthButtonsProps> = ({
         )}
       </TouchableOpacity>
 
-      {/* Facebook Icon Button */}
+      {/* 2. Apple Icon Button */}
       <TouchableOpacity
-        activeOpacity={0.8}
+        activeOpacity={0.78}
+        onPress={() => onSelectProvider('apple')}
+        disabled={isAnyLoading}
+        style={[
+          styles.iconBtn,
+          styles.appleBtn,
+          loadingProvider === 'apple' && styles.iconBtnActive,
+        ]}
+        accessibilityRole="button"
+        accessibilityLabel="Sign in with Apple"
+        accessibilityHint="Authenticate securely using your Apple ID"
+        accessibilityState={{ disabled: isAnyLoading, busy: loadingProvider === 'apple' }}
+      >
+        {loadingProvider === 'apple' ? (
+          <ActivityIndicator size="small" color="#FFFFFF" />
+        ) : (
+          <Text style={styles.appleIcon}></Text>
+        )}
+      </TouchableOpacity>
+
+      {/* 3. Facebook Icon Button */}
+      <TouchableOpacity
+        activeOpacity={0.78}
         onPress={() => onSelectProvider('facebook')}
-        disabled={!!loadingProvider}
-        style={[styles.iconBtn, styles.facebookBtn]}
+        disabled={isAnyLoading}
+        style={[
+          styles.iconBtn,
+          styles.facebookBtn,
+          loadingProvider === 'facebook' && styles.iconBtnActive,
+        ]}
+        accessibilityRole="button"
         accessibilityLabel="Sign in with Facebook"
+        accessibilityHint="Authenticate using your Facebook account"
+        accessibilityState={{ disabled: isAnyLoading, busy: loadingProvider === 'facebook' }}
       >
         {loadingProvider === 'facebook' ? (
           <ActivityIndicator size="small" color="#FFFFFF" />
@@ -45,13 +105,20 @@ export const SocialAuthButtons: React.FC<SocialAuthButtonsProps> = ({
         )}
       </TouchableOpacity>
 
-      {/* LinkedIn Icon Button */}
+      {/* 4. LinkedIn Icon Button */}
       <TouchableOpacity
-        activeOpacity={0.8}
+        activeOpacity={0.78}
         onPress={() => onSelectProvider('linkedin')}
-        disabled={!!loadingProvider}
-        style={[styles.iconBtn, styles.linkedinBtn]}
+        disabled={isAnyLoading}
+        style={[
+          styles.iconBtn,
+          styles.linkedinBtn,
+          loadingProvider === 'linkedin' && styles.iconBtnActive,
+        ]}
+        accessibilityRole="button"
         accessibilityLabel="Sign in with LinkedIn"
+        accessibilityHint="Authenticate using your professional LinkedIn profile"
+        accessibilityState={{ disabled: isAnyLoading, busy: loadingProvider === 'linkedin' }}
       >
         {loadingProvider === 'linkedin' ? (
           <ActivityIndicator size="small" color="#FFFFFF" />
@@ -68,7 +135,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: Spacing.lg,
+    gap: Spacing.md,
   },
   iconBtn: {
     width: 50,
@@ -76,15 +143,19 @@ const styles = StyleSheet.create({
     borderRadius: Radii.full,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
     elevation: 2,
+  },
+  iconBtnActive: {
+    opacity: 0.9,
+    transform: [{ scale: 0.97 }],
   },
   googleBtn: {
     backgroundColor: Colors.surface,
-    borderWidth: 1.5,
+    borderWidth: 1.2,
     borderColor: Colors.border,
   },
   googleIconBox: {
@@ -100,6 +171,16 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     fontSize: 16,
     lineHeight: 18,
+    fontFamily: Typography.fontFamily,
+  },
+  appleBtn: {
+    backgroundColor: '#000000',
+  },
+  appleIcon: {
+    color: '#FFFFFF',
+    fontSize: 24,
+    lineHeight: 26,
+    fontWeight: '700',
     fontFamily: Typography.fontFamily,
   },
   facebookBtn: {
@@ -118,7 +199,7 @@ const styles = StyleSheet.create({
   linkedinIn: {
     color: '#FFFFFF',
     fontWeight: '900',
-    fontSize: 17,
+    fontSize: 18,
     lineHeight: 20,
     fontFamily: Typography.fontFamily,
   },

@@ -24,7 +24,7 @@ interface AuthContextType {
   selectRole: (role: UserAccountType) => Promise<void>;
   loginAsDemo: (role: UserAccountType) => Promise<void>;
   loginWithSocial: (
-    provider: 'google' | 'facebook' | 'linkedin',
+    provider: 'google' | 'facebook' | 'linkedin' | 'apple',
     accountType?: UserAccountType
   ) => Promise<{ success: boolean; error?: string }>;
   loginWithEmail: (
@@ -206,7 +206,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loginWithSocial = useCallback(
     async (
-      provider: 'google' | 'facebook' | 'linkedin',
+      provider: 'google' | 'facebook' | 'linkedin' | 'apple',
       accountType: UserAccountType = 'employer'
     ): Promise<{ success: boolean; error?: string }> => {
       try {

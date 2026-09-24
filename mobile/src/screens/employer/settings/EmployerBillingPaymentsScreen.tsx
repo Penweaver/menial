@@ -130,6 +130,7 @@ export const EmployerBillingPaymentsScreen: React.FC<Props> = ({ navigation }) =
         <Button
           title="+ Add New Debit / Credit Card"
           variant="outline"
+          size="md"
           onPress={handleAddNewCard}
           style={styles.addCardBtn}
         />

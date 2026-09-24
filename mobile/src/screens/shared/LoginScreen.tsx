@@ -13,7 +13,8 @@ import { TopBar } from '../../components/common/TopBar';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import { ScreenFooter } from '../../components/common/ScreenFooter';
-import { SocialAuthButtons } from '../../components/auth/SocialAuthButtons';
+import { SegmentedControl } from '../../components/common/SegmentedControl';
+import { SocialAuthButtons, SocialProvider } from '../../components/auth/SocialAuthButtons';
 import { useAuth } from '../../context/AuthContext';
 import { AuthStackParamList } from '../../navigation/types';
 
@@ -40,7 +41,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [socialLoading, setSocialLoading] = useState<'google' | 'facebook' | 'linkedin' | null>(null);
+  const [socialLoading, setSocialLoading] = useState<SocialProvider | null>(null);
 
   // Phone OTP Flow
   const handleSendOtp = async () => {
@@ -88,7 +89,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   };
 
   // Social Auth Flow (Icon-only)
-  const handleSocialLogin = async (provider: 'google' | 'facebook' | 'linkedin') => {
+  const handleSocialLogin = async (provider: SocialProvider) => {
     setError(null);
     setSocialLoading(provider);
     const result = await loginWithSocial(provider);
@@ -138,43 +139,19 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
           </View>
         )}
 
-        {/* Minimal Method Selector */}
-        <View style={styles.methodToggle}>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => {
-              setAuthMethod('phone');
-              setError(null);
-            }}
-            style={[styles.toggleBtn, authMethod === 'phone' && styles.toggleBtnActive]}
-          >
-            <Text
-              style={[
-                styles.toggleText,
-                authMethod === 'phone' && styles.toggleTextActive,
-              ]}
-            >
-              Phone Number
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => {
-              setAuthMethod('email');
-              setError(null);
-            }}
-            style={[styles.toggleBtn, authMethod === 'email' && styles.toggleBtnActive]}
-          >
-            <Text
-              style={[
-                styles.toggleText,
-                authMethod === 'email' && styles.toggleTextActive,
-              ]}
-            >
-              Email Address
-            </Text>
-          </TouchableOpacity>
-        </View>
+        {/* Standardized Method Selector */}
+        <SegmentedControl<AuthMethod>
+          options={[
+            { key: 'phone', label: 'Phone Number' },
+            { key: 'email', label: 'Email Address' },
+          ]}
+          selectedKey={authMethod}
+          onSelect={(key) => {
+            setAuthMethod(key);
+            setError(null);
+          }}
+          style={styles.methodToggle}
+        />
 
         {/* Input Fields */}
         {authMethod === 'phone' ? (
@@ -196,6 +173,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             <Button
               title="Continue"
               onPress={handleSendOtp}
+              variant="primary"
+              size="lg"
               loading={loading}
               disabled={rateLimitState.isLocked || phone.length < 10}
               style={styles.primaryBtn}
@@ -230,6 +209,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
               <TouchableOpacity
                 activeOpacity={0.7}
                 onPress={() => setShowPassword(!showPassword)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                accessibilityRole="button"
+                accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
                 style={styles.eyeToggle}
               >
                 <Text style={styles.eyeText}>{showPassword ? '👁️' : '🔒'}</Text>
@@ -239,6 +221,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             <Button
               title="Sign In"
               onPress={handleEmailLogin}
+              variant="primary"
+              size="lg"
               loading={loading}
               disabled={!email || password.length < 6}
               style={styles.primaryBtn}
