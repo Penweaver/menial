@@ -1,5 +1,3 @@
-import * as crypto from 'crypto';
-
 export class PaymentSignatureVerifier {
   /**
    * Cryptographically verifies Paystack/Flutterwave HMAC-SHA512 signature using timing-safe comparison.
@@ -13,18 +11,26 @@ export class PaymentSignatureVerifier {
     if (!signatureHeader || !rawBody || !secretKey) {
       return false;
     }
-    const hash = crypto
-      .createHmac('sha512', secretKey)
-      .update(rawBody)
-      .digest('hex');
-
     try {
-      const hashBuffer = Buffer.from(hash, 'utf8');
-      const sigBuffer = Buffer.from(signatureHeader, 'utf8');
-      if (hashBuffer.length !== sigBuffer.length) {
+      // Dynamic import prevents React Native / Metro from failing to bundle Node built-in 'crypto'
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const cryptoName = 'crypto';
+      const nodeCrypto = typeof require !== 'undefined' ? require(cryptoName) : null;
+      if (!nodeCrypto) {
         return false;
       }
-      return crypto.timingSafeEqual(hashBuffer, sigBuffer);
+
+      const hash = nodeCrypto
+        .createHmac('sha512', secretKey)
+        .update(rawBody)
+        .digest('hex');
+
+      const hashBuffer = typeof Buffer !== 'undefined' ? Buffer.from(hash, 'utf8') : null;
+      const sigBuffer = typeof Buffer !== 'undefined' ? Buffer.from(signatureHeader, 'utf8') : null;
+      if (!hashBuffer || !sigBuffer || hashBuffer.length !== sigBuffer.length) {
+        return false;
+      }
+      return nodeCrypto.timingSafeEqual(hashBuffer, sigBuffer);
     } catch {
       return false;
     }

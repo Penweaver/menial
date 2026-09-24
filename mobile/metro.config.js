@@ -23,6 +23,7 @@ config.resolver.nodeModulesPaths = [
 config.resolver.extraNodeModules = {
   '@shared': path.resolve(workspaceRoot, 'shared'),
   shared: path.resolve(workspaceRoot, 'shared'),
+  crypto: path.resolve(projectRoot, 'src/shims/crypto.js'),
 };
 
 module.exports = config;
