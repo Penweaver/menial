@@ -22,6 +22,7 @@ interface AuthContextType {
     accountType?: UserAccountType
   ) => Promise<{ success: boolean; error?: string }>;
   selectRole: (role: UserAccountType) => Promise<void>;
+  loginAsDemo: (role: UserAccountType) => Promise<void>;
   logout: () => Promise<void>;
   formatPhoneNumber: (raw: string) => string;
 }
@@ -173,6 +174,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [session]);
 
+  const loginAsDemo = useCallback(async (role: UserAccountType): Promise<void> => {
+    const demoSession: PhoneAuthSession = {
+      userId: `demo_${role}_001`,
+      phone: role === 'employer' ? '+2348011112222' : '+2348033334444',
+      token: `demo_token_${Date.now()}`,
+      expiresAt: new Date(Date.now() + 86400000).toISOString(),
+      accountType: role,
+    };
+    await StorageService.saveAuthSession(demoSession);
+    await StorageService.saveActiveRole(role);
+    setSession(demoSession);
+    setActiveRole(role);
+  }, []);
+
   const logout = useCallback(async (): Promise<void> => {
     await StorageService.clearAuthSession();
     await StorageService.clearActiveRole();
@@ -190,6 +205,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         requestOtp,
         verifyOtp,
         selectRole,
+        loginAsDemo,
         logout,
         formatPhoneNumber,
       }}
