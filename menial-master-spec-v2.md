@@ -215,7 +215,7 @@ Workers must be represented as professionals providing valuable services.
 
 Existing design system:
 * Electric Royal Cobalt: #1A4FEE (Core brand hue per official logo assets)
-* Mint/Jade: #10B981
+* Verified Sky Blue: #0284C7 (Updated from #10B981 for blue system-wide coherence)
 * Warm neutral backgrounds
 * White surfaces
 * Dark text: #0F172A

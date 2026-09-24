@@ -23,6 +23,21 @@ interface AuthContextType {
   ) => Promise<{ success: boolean; error?: string }>;
   selectRole: (role: UserAccountType) => Promise<void>;
   loginAsDemo: (role: UserAccountType) => Promise<void>;
+  loginWithSocial: (
+    provider: 'google' | 'facebook' | 'linkedin',
+    accountType?: UserAccountType
+  ) => Promise<{ success: boolean; error?: string }>;
+  loginWithEmail: (
+    email: string,
+    password: string,
+    accountType?: UserAccountType
+  ) => Promise<{ success: boolean; error?: string }>;
+  registerWithEmail: (
+    email: string,
+    password: string,
+    fullName: string,
+    accountType?: UserAccountType
+  ) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   formatPhoneNumber: (raw: string) => string;
 }
@@ -188,6 +203,108 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setActiveRole(role);
   }, []);
 
+  const loginWithSocial = useCallback(
+    async (
+      provider: 'google' | 'facebook' | 'linkedin',
+      accountType: UserAccountType = 'employer'
+    ): Promise<{ success: boolean; error?: string }> => {
+      try {
+        const socialSession: PhoneAuthSession = {
+          userId: `${provider}_user_${Date.now()}`,
+          phone: '+2348000000000',
+          token: `${provider}_oauth_${Date.now()}`,
+          expiresAt: new Date(Date.now() + 86400000 * 30).toISOString(),
+          accountType,
+        };
+        await StorageService.saveAuthSession(socialSession);
+        await StorageService.saveActiveRole(accountType);
+        setSession(socialSession);
+        setActiveRole(accountType);
+        return { success: true };
+      } catch (err) {
+        return {
+          success: false,
+          error: err instanceof Error ? err.message : `Failed to sign in with ${provider}`,
+        };
+      }
+    },
+    []
+  );
+
+  const loginWithEmail = useCallback(
+    async (
+      email: string,
+      password: string,
+      accountType: UserAccountType = 'employer'
+    ): Promise<{ success: boolean; error?: string }> => {
+      try {
+        if (!email.includes('@')) {
+          return { success: false, error: 'Please enter a valid email address.' };
+        }
+        if (password.length < 6) {
+          return { success: false, error: 'Password must be at least 6 characters.' };
+        }
+        const emailSession: PhoneAuthSession = {
+          userId: `email_${Date.now()}`,
+          phone: '+2348000000000',
+          token: `email_jwt_${Date.now()}`,
+          expiresAt: new Date(Date.now() + 86400000 * 14).toISOString(),
+          accountType,
+        };
+        await StorageService.saveAuthSession(emailSession);
+        await StorageService.saveActiveRole(accountType);
+        setSession(emailSession);
+        setActiveRole(accountType);
+        return { success: true };
+      } catch (err) {
+        return {
+          success: false,
+          error: err instanceof Error ? err.message : 'Email authentication failed.',
+        };
+      }
+    },
+    []
+  );
+
+  const registerWithEmail = useCallback(
+    async (
+      email: string,
+      password: string,
+      fullName: string,
+      accountType: UserAccountType = 'employer'
+    ): Promise<{ success: boolean; error?: string }> => {
+      try {
+        if (!fullName.trim()) {
+          return { success: false, error: 'Please enter your full legal name.' };
+        }
+        if (!email.includes('@')) {
+          return { success: false, error: 'Please enter a valid email address.' };
+        }
+        if (password.length < 6) {
+          return { success: false, error: 'Password must be at least 6 characters.' };
+        }
+        const emailSession: PhoneAuthSession = {
+          userId: `user_${Date.now()}`,
+          phone: '+2348000000000',
+          token: `register_jwt_${Date.now()}`,
+          expiresAt: new Date(Date.now() + 86400000 * 14).toISOString(),
+          accountType,
+        };
+        await StorageService.saveAuthSession(emailSession);
+        await StorageService.saveActiveRole(accountType);
+        setSession(emailSession);
+        setActiveRole(accountType);
+        return { success: true };
+      } catch (err) {
+        return {
+          success: false,
+          error: err instanceof Error ? err.message : 'Registration failed.',
+        };
+      }
+    },
+    []
+  );
+
   const logout = useCallback(async (): Promise<void> => {
     await StorageService.clearAuthSession();
     await StorageService.clearActiveRole();
@@ -206,6 +323,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         verifyOtp,
         selectRole,
         loginAsDemo,
+        loginWithSocial,
+        loginWithEmail,
+        registerWithEmail,
         logout,
         formatPhoneNumber,
       }}

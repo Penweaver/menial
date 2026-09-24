@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   standingBadge: {
-    backgroundColor: '#ECFDF5',
+    backgroundColor: '#E0F2FE',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: RADIUS.sm,
@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
   standingText: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#065F46',
+    color: '#0369A1',
   },
   metricsRow: {
     flexDirection: 'row',

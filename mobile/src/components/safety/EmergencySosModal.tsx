@@ -261,24 +261,24 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   reportBadge: {
-    backgroundColor: '#ECFDF5',
+    backgroundColor: '#E0F2FE',
     padding: SPACING.sm,
     borderRadius: RADIUS.md,
     alignItems: 'center',
     width: '100%',
     borderWidth: 1,
-    borderColor: '#A7F3D0',
+    borderColor: '#BAE6FD',
     marginBottom: SPACING.md,
   },
   reportLabel: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#065F46',
+    color: '#0369A1',
   },
   reportRef: {
     fontSize: TYPOGRAPHY.body.fontSize,
     fontWeight: '800',
-    color: '#065F46',
+    color: '#0369A1',
     marginTop: 2,
   },
   hotlinesCard: {

@@ -30,7 +30,7 @@ The key discrepancies flagged below **must be aligned to the Master Spec (Sectio
 | Design Token / Element | Master Spec (Section 7 Truth) | Stitch MCP Auto-Generated | Audit Result & Required Alignment |
 | :--- | :--- | :--- | :--- |
 | **Primary Brand Color** | `#1A4FEE`<br>*(Electric Royal Cobalt)* | `#003624`<br>*(Legacy MD3 green)* | ⚠️ **Brand Identity Update:** Official logo and app icon establish `#1A4FEE` (Electric Royal Cobalt) as core brand hue. **Enforce:** Use `#1A4FEE` as core `primary` for all main CTAs, headers, and active states. |
-| **Secondary Color** | `#10B981`<br>*(Mint / Jade Kinetic Green)* | `#006C49`<br>*(Darker emerald shade)* | ⚠️ **Discrepancy:** Stitch MD3 palette mapped `secondary` to `#006C49` (though `#10B981` is in overrides). **Override:** Use `#10B981` strictly for verified badges, biometric checks, active online dots, and success. |
+| **Secondary Color** | `#0284C7`<br>*(Verified Sky Blue)* | `#006C49`<br>*(Legacy green shade)* | ⚠️ **Blue System Alignment:** Aligned to verified sky blue `#0284C7` platform-wide to complement `#1A4FEE` primary. **Override:** Use `#0284C7` strictly for verified badges, biometric checks, active online dots, and success. |
 | **Tertiary Accent** | `#F59E0B`<br>*(Amber Gold)* | `#452900` / `#633d00`<br>*(Dark brown/amber)* | ⚠️ **Discrepancy:** Stitch auto-generated dark brown tertiary tokens. **Override:** Enforce vibrant `#F59E0B` for skill ratings, review stars, escrow hold warnings, and urgent alerts. |
 | **Background / Canvas** | `#F8FAFC`<br>*(Slate-50 Warm Off-White)* | `#FAF8FF`<br>*(Cool/Lavender tinted white)* | ⚠️ **Discrepancy:** Stitch generated a purple/cool-tinted canvas. **Override:** Standardize on neutral Slate-50 `#F8FAFC` to eliminate glare under outdoor sunlight. |
 | **Surface Containers** | `#FFFFFF` *(Card Base)*<br>`#F1F5F9` *(Slate-100 Inputs)* | `#EAEDFF` / `#DAE2FD`<br>*(Periwinkle/Cool containers)* | ⚠️ **Discrepancy:** Stitch MD3 auto-palette used bluish tint containers. **Override:** Use crisp `#FFFFFF` for cards and warm `#F1F5F9` for inputs and segment tracks. |
@@ -49,7 +49,7 @@ The color system leverages deep psychological associations with prosperity, stab
 
 ```
 ├── Primary: Electric Royal Cobalt (#1A4FEE) ──► Core Brand, App Bars, Main CTAs
-├── Secondary: Mint / Jade (#10B981)         ──► Verification Badges, Success, Online Dots
+├── Secondary: Verified Sky Blue (#0284C7)    ──► Verification Badges, Success, Online Dots
 ├── Tertiary: Amber Gold (#F59E0B)           ──► Ratings (Stars), Escrow Hold, Warnings
 ├── Neutral Dark: Midnight Slate (#0F172A)   ──► Headings, High-Contrast Body Text
 ├── Neutral Muted: Slate Grey (#64748B)      ──► Captions, Secondary Metadata, Borders (#E2E8F0)
@@ -62,9 +62,9 @@ The color system leverages deep psychological associations with prosperity, stab
   * *Roles:* Main application bar background, primary action buttons (`ButtonFilled`), active tab/nav states, brand headers, active radio buttons.
   * *On-Primary:* `#FFFFFF` (Pure White).
   * *Container Fill:* `#EBF1FE` (Soft Cobalt 50 tint), *Hover:* `#1440C7`.
-* **Secondary (`#10B981` — Mint Jade):**
+* **Secondary (`#0284C7` — Verified Sky Blue):**
   * *Roles:* Verified worker shield badges, biometric checkmarks, active "Available Now" indicators, cashout success toasts, completed job pills.
-  * *Container Fill:* `#ECFDF5` (Mint 50 tint), *Text/Icon:* `#065F46`.
+  * *Container Fill:* `#E0F2FE` (Sky 100 tint), *Text/Icon:* `#0369A1`.
 * **Tertiary (`#F59E0B` — Amber Gold):**
   * *Roles:* Rating stars (e.g., `★ 4.9`), escrow fund holding pills ("In Escrow"), dispute alert banners, priority job tags.
   * *Container Fill:* `#FEF3C7` (Amber 50 tint), *Text/Icon:* `#92400E`.
@@ -172,7 +172,7 @@ To maintain extreme clarity in bright outdoor environments, visual hierarchy rel
 
 * **Verified Worker Badge:**
   * Pill container (`rounded-full`), 28px height.
-  * *Fill:* `#ECFDF5` (Mint 50), *Text/Icon:* `#065F46`.
+  * *Fill:* `#E0F2FE` (Sky 100), *Text/Icon:* `#0369A1`.
   * *Icon:* Shield contour containing unbroken SVG checkmark.
 * **Rating Pill:**
   * Pill container, 24px height.

@@ -11,9 +11,9 @@ export const Colors = {
   primaryOn: '#FFFFFF',        // Pure white on cobalt
   primaryContainer: '#EBF1FE', // Soft cobalt blue tint
   
-  secondary: '#10B981',        // Mint / Jade (Verification shields, biometric checkmarks, active status)
-  secondaryContainer: '#ECFDF5',
-  secondaryText: '#065F46',
+  secondary: '#0284C7',        // Verified Sky Blue (Verification shields, biometric checkmarks, active status)
+  secondaryContainer: '#E0F2FE', // Soft sky blue tint
+  secondaryText: '#0369A1',    // Deep sky blue contrast text
 
   tertiary: '#F59E0B',         // Amber Gold (Ratings, escrow warnings, priority)
   tertiaryContainer: '#FEF3C7',

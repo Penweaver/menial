@@ -248,7 +248,7 @@ The visual layer is governed by the **"Dignified Utility"** design system, tailo
 
 ### 9.1 Visual Tokens Summary
 - **Primary Brand Color:** `#1A4FEE` (Electric Royal Cobalt)
-- **Accent / Kinetic Color:** `#10B981` (Mint Jade)
+- **Accent / Kinetic Color:** `#0284C7` (Verified Sky Blue)
 - **Warning / Rating Color:** `#F59E0B` (Amber Gold)
 - **Reading Base:** `#0F172A` (Midnight Slate)
 - **Typography:** **Plus Jakarta Sans** with tabular figures (`tnum`) for monetary values.

@@ -369,7 +369,7 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
   },
   urgentPill: {
-    backgroundColor: '#ECFDF5',
+    backgroundColor: '#E0F2FE',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: RADIUS.full,
@@ -377,7 +377,7 @@ const styles = StyleSheet.create({
   urgentText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#065F46',
+    color: '#0369A1',
   },
   divider: {
     height: 1,
@@ -407,11 +407,11 @@ const styles = StyleSheet.create({
   escrowCallout: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: '#ECFDF5',
+    backgroundColor: '#E0F2FE',
     padding: SPACING.md,
     borderRadius: RADIUS.lg,
     borderWidth: 1,
-    borderColor: '#A7F3D0',
+    borderColor: '#BAE6FD',
     gap: SPACING.sm,
   },
   escrowShield: {
@@ -428,7 +428,7 @@ const styles = StyleSheet.create({
   },
   escrowCalloutText: {
     fontSize: TYPOGRAPHY.caption.fontSize,
-    color: '#065F46',
+    color: '#0369A1',
     lineHeight: 18,
     marginTop: 2,
   },
@@ -458,7 +458,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   trustShieldPill: {
-    backgroundColor: '#ECFDF5',
+    backgroundColor: '#E0F2FE',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: RADIUS.sm,
@@ -466,7 +466,7 @@ const styles = StyleSheet.create({
   trustShieldText: {
     fontSize: 9,
     fontWeight: '700',
-    color: '#065F46',
+    color: '#0369A1',
   },
   breakdownValue: {
     fontSize: TYPOGRAPHY.body.fontSize,
@@ -651,7 +651,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: '#ECFDF5',
+    backgroundColor: '#E0F2FE',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: SPACING.md,

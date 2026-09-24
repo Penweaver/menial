@@ -429,7 +429,7 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#10B981',
+    backgroundColor: COLORS.secondary,
     marginRight: 4,
   },
   liveTagText: {
@@ -560,7 +560,7 @@ const styles = StyleSheet.create({
     marginRight: SPACING.sm,
   },
   iconCredit: {
-    backgroundColor: '#ECFDF5',
+    backgroundColor: '#E0F2FE',
   },
   iconDebit: {
     backgroundColor: '#FEF3C7',
@@ -589,7 +589,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   amountCredit: {
-    color: '#065F46', // Mint green
+    color: '#0369A1', // Verified Sky Blue
   },
   amountDebit: {
     color: '#92400E', // Amber brown
@@ -677,7 +677,7 @@ const styles = StyleSheet.create({
     top: 14,
   },
   verifiedAccountPill: {
-    backgroundColor: '#ECFDF5',
+    backgroundColor: '#E0F2FE',
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.xs,
     borderRadius: RADIUS.md,
@@ -685,7 +685,7 @@ const styles = StyleSheet.create({
   },
   verifiedAccountText: {
     ...TYPOGRAPHY.scale.labelSm,
-    color: '#065F46',
+    color: '#0369A1',
     fontWeight: '700',
   },
   amountLabelRow: {
@@ -711,7 +711,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: '#ECFDF5',
+    backgroundColor: '#E0F2FE',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: SPACING.md,

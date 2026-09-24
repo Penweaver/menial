@@ -247,7 +247,7 @@ async function runSlice1Tests() {
   // --------------------------------------------------------------------------
   console.log('\n--- 6. DESIGN SYSTEM TOKENS (DESIGN.md) ---');
   assert(Colors.primary === '#1A4FEE', 'Primary brand color is #1A4FEE (Electric Royal Cobalt)');
-  assert(Colors.secondary === '#10B981', 'Secondary color is #10B981 (Mint/Jade)');
+  assert(Colors.secondary === '#0284C7', 'Secondary color is #0284C7 (Verified Sky Blue)');
   assert(Colors.tertiary === '#F59E0B', 'Tertiary color is #F59E0B (Amber Gold)');
   assert(Colors.canvas === '#F8FAFC', 'Canvas color is #F8FAFC (Slate-50 Warm Off-White)');
   assert(formatKoboToNaira(250000) === '₦2,500', 'formatKoboToNaira formats 250,000 kobo as ₦2,500');

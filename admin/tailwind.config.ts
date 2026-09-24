@@ -20,10 +20,10 @@ const config: Config = {
           light: '#EBF1FE',
         },
         secondary: {
-          DEFAULT: '#10B981', // Mint / Jade Kinetic Green
-          container: '#ECFDF5',
-          'on-container': '#065F46',
-          fixed: '#6FFBBE',
+          DEFAULT: '#0284C7', // Verified Sky Blue
+          container: '#E0F2FE',
+          'on-container': '#0369A1',
+          fixed: '#7DD3FC',
         },
         tertiary: {
           DEFAULT: '#F59E0B', // Amber Gold

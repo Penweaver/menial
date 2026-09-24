@@ -518,7 +518,7 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   photoEvidenceTag: {
-    backgroundColor: '#ECFDF5',
+    backgroundColor: '#E0F2FE',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: RADIUS.sm,
@@ -528,7 +528,7 @@ const styles = StyleSheet.create({
   photoEvidenceText: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#065F46',
+    color: '#0369A1',
   },
   approvalCard: {
     padding: SPACING.md,
@@ -614,15 +614,15 @@ const styles = StyleSheet.create({
   completedCard: {
     padding: SPACING.lg,
     alignItems: 'center',
-    backgroundColor: '#ECFDF5',
+    backgroundColor: '#E0F2FE',
     borderWidth: 1,
-    borderColor: '#A7F3D0',
+    borderColor: '#BAE6FD',
   },
   completedIconBox: {
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#D1FAE5',
+    backgroundColor: '#BAE6FD',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: SPACING.sm,
@@ -633,11 +633,11 @@ const styles = StyleSheet.create({
   completedTitle: {
     fontSize: TYPOGRAPHY.h2.fontSize,
     fontWeight: '800',
-    color: '#065F46',
+    color: '#0369A1',
   },
   completedDesc: {
     fontSize: TYPOGRAPHY.caption.fontSize,
-    color: '#047857',
+    color: '#0284C7',
     textAlign: 'center',
     marginTop: 4,
     lineHeight: 18,

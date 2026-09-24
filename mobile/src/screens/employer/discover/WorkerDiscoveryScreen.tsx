@@ -289,17 +289,17 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   trustTag: {
-    backgroundColor: '#ECFDF5',
+    backgroundColor: '#E0F2FE',
     paddingHorizontal: SPACING.sm,
     paddingVertical: 4,
     borderRadius: RADIUS.full,
     borderWidth: 1,
-    borderColor: '#A7F3D0',
+    borderColor: '#BAE6FD',
   },
   trustTagText: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#065F46',
+    color: '#0369A1',
   },
   escrowBanner: {
     backgroundColor: COLORS.primary,
@@ -521,7 +521,7 @@ const styles = StyleSheet.create({
   availabilityBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ECFDF5',
+    backgroundColor: '#E0F2FE',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: RADIUS.sm,
@@ -534,7 +534,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.secondary,
   },
   availabilityText: {
-    color: '#065F46',
+    color: '#0369A1',
     fontSize: 11,
     fontWeight: '600',
   },

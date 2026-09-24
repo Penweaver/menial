@@ -278,7 +278,7 @@ export const WorkerActiveJobScreen: React.FC = () => {
               <Text style={styles.timerLabel}>ACTIVE WORK DURATION</Text>
               <Text style={styles.timerValue}>{formatTimer(workSeconds)}</Text>
               <View style={styles.pulsingRow}>
-                <View style={styles.greenPulseDot} />
+                <View style={styles.bluePulseDot} />
                 <Text style={styles.pulsingText}>Timer Active · Escrow Protected</Text>
               </View>
             </View>
@@ -454,11 +454,11 @@ const styles = StyleSheet.create({
   escrowLockedBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ECFDF5',
+    backgroundColor: '#E0F2FE',
     padding: SPACING.sm,
     borderRadius: RADIUS.md,
     borderWidth: 1,
-    borderColor: '#A7F3D0',
+    borderColor: '#BAE6FD',
     gap: SPACING.sm,
   },
   escrowLockedIcon: {
@@ -470,11 +470,11 @@ const styles = StyleSheet.create({
   escrowLockedTitle: {
     fontSize: TYPOGRAPHY.caption.fontSize,
     fontWeight: '800',
-    color: '#065F46',
+    color: '#0369A1',
   },
   escrowLockedDesc: {
     fontSize: 10,
-    color: '#047857',
+    color: '#0284C7',
     marginTop: 1,
   },
   detailCard: {
@@ -592,14 +592,14 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
   },
   photoAttached: {
-    backgroundColor: '#ECFDF5',
+    backgroundColor: '#E0F2FE',
     padding: SPACING.sm,
     borderRadius: RADIUS.md,
   },
   photoAttachedText: {
     fontSize: TYPOGRAPHY.caption.fontSize,
     fontWeight: '700',
-    color: '#065F46',
+    color: '#0369A1',
   },
   timerBox: {
     backgroundColor: COLORS.canvas,
@@ -628,7 +628,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
   },
-  greenPulseDot: {
+  bluePulseDot: {
     width: 8,
     height: 8,
     borderRadius: 4,

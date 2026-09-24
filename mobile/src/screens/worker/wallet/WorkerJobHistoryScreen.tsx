@@ -303,7 +303,7 @@ const styles = StyleSheet.create({
   },
   payValue: {
     ...TYPOGRAPHY.scale.labelLg,
-    color: '#065F46', // Mint green
+    color: '#0369A1', // Verified Sky Blue
     fontWeight: '700',
     fontVariant: ['tabular-nums'],
   },
@@ -313,14 +313,14 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   photoProofPill: {
-    backgroundColor: '#ECFDF5',
+    backgroundColor: '#E0F2FE',
     paddingHorizontal: SPACING.sm,
     paddingVertical: 2,
     borderRadius: RADIUS.sm,
   },
   photoProofText: {
     ...TYPOGRAPHY.scale.bodySm,
-    color: '#065F46',
+    color: '#0369A1',
     fontSize: 11,
     fontWeight: '600',
   },
