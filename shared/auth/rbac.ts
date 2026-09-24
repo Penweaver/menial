@@ -7,6 +7,8 @@
 
 import type { AdminPermissionKey } from '../types/enums';
 
+export type { AdminPermissionKey };
+
 export interface AdminUserContext {
   id: string;
   userId: string;
