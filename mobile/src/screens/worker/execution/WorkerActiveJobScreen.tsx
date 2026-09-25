@@ -19,16 +19,85 @@ import { ActiveSosBanner } from '../../../components/safety/ActiveSosBanner';
 import { JobRatingModal } from '../../../components/trust/JobRatingModal';
 import { ApiService } from '../../../services/api';
 import { MediaService, LocationService, NotificationService } from '../../../services/hardware';
+import { JobChatModal } from '../../../components/chat/JobChatModal';
+import { RealtimeSyncService, OfflineSyncService } from '../../../services/supabase';
 
 export const WorkerActiveJobScreen: React.FC = () => {
   const [job, setJob] = useState<any>(ApiService.getActiveJob());
   const [loading, setLoading] = useState<boolean>(false);
   const [sosModalVisible, setSosModalVisible] = useState<boolean>(false);
   const [ratingModalVisible, setRatingModalVisible] = useState<boolean>(false);
+  const [chatModalVisible, setChatModalVisible] = useState<boolean>(false);
+  const [pendingSyncCount, setPendingSyncCount] = useState<number>(0);
   const [arrivalPhoto, setArrivalPhoto] = useState<string | null>(null);
   const [checkoutPhoto, setCheckoutPhoto] = useState<string | null>(null);
   const [completionNotes, setCompletionNotes] = useState<string>('Deep scrub completed. Tiles restored and windows sanitized.');
   const [workSeconds, setWorkSeconds] = useState<number>(3640); // ~1h 00m
+
+  // Offline sync listener & mutation handlers (§51)
+  useEffect(() => {
+    const unsubQueue = OfflineSyncService.subscribe((count) => {
+      setPendingSyncCount(count);
+    });
+
+    OfflineSyncService.registerHandler('JOB_START_TRAVEL', async (payload) => {
+      await ApiService.startTravel(payload.jobId);
+      return true;
+    });
+
+    OfflineSyncService.registerHandler('JOB_ARRIVE', async (payload) => {
+      await ApiService.arriveAtJob(payload.jobId, payload.photoUrl);
+      return true;
+    });
+
+    OfflineSyncService.registerHandler('JOB_COMPLETE', async (payload) => {
+      await ApiService.completeWork(payload.jobId, payload.photoUrl, payload.completionNotes);
+      return true;
+    });
+
+    return () => {
+      unsubQueue();
+    };
+  }, []);
+
+  // Real-time Supabase job status subscription (§31, §32)
+  useEffect(() => {
+    if (!job?.id) return;
+
+    const unsubJob = RealtimeSyncService.subscribeToJobStatus(job.id, (updatedJob) => {
+      setJob((prev: any) => ({ ...prev, ...updatedJob }));
+      NotificationService.sendLocalNotification({
+        title: 'Job State Updated',
+        body: `Job #${job.publicJobId || job.id} status changed to ${updatedJob.status}.`,
+      });
+    });
+
+    return () => {
+      unsubJob();
+    };
+  }, [job?.id]);
+
+  // Real-time worker transit GPS broadcasting beacon (§49, §50)
+  useEffect(() => {
+    if (job?.status !== 'worker_on_way' || !job?.id) return;
+
+    const beaconInterval = setInterval(async () => {
+      try {
+        const loc = await LocationService.getCurrentLocation();
+        await RealtimeSyncService.broadcastWorkerLocation({
+          workerId: 'worker_adebayo',
+          jobId: job.id,
+          latitude: loc.latitude,
+          longitude: loc.longitude,
+          timestamp: Date.now(),
+        });
+      } catch (err) {
+        console.warn('[WorkerActiveJobScreen] Transit location beacon error:', err);
+      }
+    }, 8000);
+
+    return () => clearInterval(beaconInterval);
+  }, [job?.status, job?.id]);
 
   // Active work stopwatch timer
   useEffect(() => {
@@ -72,6 +141,7 @@ export const WorkerActiveJobScreen: React.FC = () => {
     setLoading(true);
     try {
       const loc = await LocationService.getCurrentLocation();
+      await OfflineSyncService.enqueue('JOB_START_TRAVEL', { jobId: job.id });
       await ApiService.startTravel(job.id);
       setJob({ ...job, status: 'worker_on_way' });
       await NotificationService.sendLocalNotification({
@@ -91,6 +161,7 @@ export const WorkerActiveJobScreen: React.FC = () => {
     try {
       const loc = await LocationService.getCurrentLocation();
       const photoToUse = arrivalPhoto || 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=400';
+      await OfflineSyncService.enqueue('JOB_ARRIVE', { jobId: job.id, photoUrl: photoToUse });
       await ApiService.arriveAtJob(job.id, photoToUse);
       setJob({
         ...job,
@@ -126,6 +197,11 @@ export const WorkerActiveJobScreen: React.FC = () => {
     setLoading(true);
     try {
       const photoToUse = checkoutPhoto || 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400';
+      await OfflineSyncService.enqueue('JOB_COMPLETE', {
+        jobId: job.id,
+        photoUrl: photoToUse,
+        completionNotes,
+      });
       await ApiService.completeWork(job.id, photoToUse, completionNotes);
       setJob({
         ...job,
@@ -194,6 +270,16 @@ export const WorkerActiveJobScreen: React.FC = () => {
       })()}
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
+        {/* Section 51 Offline Sync Queue Indicator */}
+        {pendingSyncCount > 0 ? (
+          <View style={styles.syncBanner}>
+            <Text style={styles.syncIcon}>🔄</Text>
+            <Text style={styles.syncText}>
+              {pendingSyncCount} action{pendingSyncCount > 1 ? 's' : ''} queued offline. Auto-syncing when connected (§51).
+            </Text>
+          </View>
+        ) : null}
+
         {/* Job Status Banner */}
         <Card style={styles.statusCard}>
           <View style={styles.statusRow}>
@@ -236,6 +322,15 @@ export const WorkerActiveJobScreen: React.FC = () => {
               <Text style={styles.employerName}>{job.employerName || 'Chief Adeleke'}</Text>
               <Text style={styles.employerPhone}>📞 {job.employerPhone || '+234 809 876 5432'}</Text>
             </View>
+            <TouchableOpacity
+              style={styles.chatActionPill}
+              onPress={() => setChatModalVisible(true)}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Chat with employer"
+            >
+              <Text style={styles.chatActionText}>💬 Chat</Text>
+            </TouchableOpacity>
           </View>
 
           <View style={styles.locationItem}>
@@ -461,6 +556,18 @@ export const WorkerActiveJobScreen: React.FC = () => {
         onRatingSubmitted={({ stars }) => {
           setJob({ ...job, rating: stars });
         }}
+      />
+
+      {/* Section 48 Real-time Job Chat Modal */}
+      <JobChatModal
+        visible={chatModalVisible}
+        onClose={() => setChatModalVisible(false)}
+        jobId={job.id}
+        publicJobId={job.publicJobId || 'MNL-2026-1042'}
+        jobTitle={job.title}
+        jobStatus={job.status}
+        currentUserRole="worker"
+        counterpartyName={job.employerName || 'Chief Adeleke'}
       />
     </View>
   );
@@ -807,5 +914,38 @@ const styles = StyleSheet.create({
     color: '#D97706',
     fontWeight: '700',
     fontSize: 13,
+  },
+  syncBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FEF3C7',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    borderRadius: RADIUS.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+  },
+  syncIcon: {
+    fontSize: 16,
+    marginRight: SPACING.xs,
+  },
+  syncText: {
+    fontSize: 12,
+    color: '#92400E',
+    fontWeight: '600',
+    flex: 1,
+  },
+  chatActionPill: {
+    backgroundColor: COLORS.primaryContainer,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 8,
+    borderRadius: RADIUS.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  chatActionText: {
+    color: COLORS.primary,
+    fontSize: 12,
+    fontWeight: '700',
   },
 });

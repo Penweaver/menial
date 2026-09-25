@@ -198,6 +198,66 @@ const defaultActiveJob = {
 };
 createdJobsStore.set(defaultActiveJob.id, defaultActiveJob);
 
+// §48 Job-Scoped Conversations and Messaging Store
+export interface JobMessage {
+  id: string;
+  conversationId: string;
+  jobId: string;
+  senderId: string;
+  senderType: 'employer' | 'worker' | 'system';
+  body: string;
+  createdAt: string;
+}
+
+export interface JobConversation {
+  id: string;
+  jobId: string;
+  publicJobId: string;
+  jobTitle: string;
+  employerId: string;
+  employerName: string;
+  workerId: string;
+  workerName: string;
+  isTerminalLocked: boolean;
+}
+
+export const jobConversationsStore = new Map<string, JobConversation>();
+export const jobMessagesStore = new Map<string, JobMessage[]>();
+
+const defaultConvId = `conv_${defaultActiveJob.id}`;
+jobConversationsStore.set(defaultActiveJob.id, {
+  id: defaultConvId,
+  jobId: defaultActiveJob.id,
+  publicJobId: defaultActiveJob.publicJobId,
+  jobTitle: defaultActiveJob.title,
+  employerId: 'employer_adeleke',
+  employerName: defaultActiveJob.employerName,
+  workerId: defaultActiveJob.hiredWorkerId,
+  workerName: defaultActiveJob.workerName,
+  isTerminalLocked: false,
+});
+
+jobMessagesStore.set(defaultConvId, [
+  {
+    id: 'msg_init_01',
+    conversationId: defaultConvId,
+    jobId: defaultActiveJob.id,
+    senderId: 'employer_adeleke',
+    senderType: 'employer',
+    body: 'Hello Adebayo, looking forward to your arrival. Please buzz flat 4B at the gate.',
+    createdAt: new Date(Date.now() - 3600000).toISOString(),
+  },
+  {
+    id: 'msg_init_02',
+    conversationId: defaultConvId,
+    jobId: defaultActiveJob.id,
+    senderId: 'worker_adebayo',
+    senderType: 'worker',
+    body: 'Good morning Chief. I will buzz 4B as soon as I arrive.',
+    createdAt: new Date(Date.now() - 1800000).toISOString(),
+  },
+]);
+
 export const mockDbClient: IDatabaseClient = {
   async rpc<T = unknown>(fn: string, args?: Record<string, unknown>): Promise<{ data: T | null; error: Error | null }> {
     // 1. Worker Onboarding RPC
@@ -1439,6 +1499,84 @@ export const ApiService = {
     workerProfilesStore.delete(workerId);
 
     return { success: true };
+  },
+
+  // --------------------------------------------------------------------------
+  // Section 48: Job-Scoped Messaging with Terminal Read-Only Lock
+  // --------------------------------------------------------------------------
+
+  getJobConversation(jobId: string): JobConversation {
+    let conv = jobConversationsStore.get(jobId);
+    const job = createdJobsStore.get(jobId);
+    const isTerminal = job?.status === 'completed' || job?.status === 'cancelled';
+
+    if (!conv) {
+      conv = {
+        id: `conv_${jobId}`,
+        jobId,
+        publicJobId: job?.publicJobId || 'MNL-JOB',
+        jobTitle: job?.title || 'Marketplace Service Assignment',
+        employerId: job?.employerId || 'employer_adeleke',
+        employerName: job?.employerName || 'Chief Adeleke',
+        workerId: job?.hiredWorkerId || 'worker_adebayo',
+        workerName: job?.workerName || 'Adebayo O.',
+        isTerminalLocked: isTerminal,
+      };
+      jobConversationsStore.set(jobId, conv);
+    } else {
+      conv.isTerminalLocked = isTerminal;
+    }
+    return conv;
+  },
+
+  getJobMessages(conversationId: string): JobMessage[] {
+    return jobMessagesStore.get(conversationId) || [];
+  },
+
+  async sendJobMessage(
+    conversationId: string,
+    body: string,
+    senderType: 'employer' | 'worker' = 'worker'
+  ): Promise<JobMessage> {
+    if (!body || !body.trim()) {
+      throw new Error('Message body cannot be empty.');
+    }
+
+    // Find conversation
+    let targetConv: JobConversation | undefined;
+    for (const c of jobConversationsStore.values()) {
+      if (c.id === conversationId) {
+        targetConv = c;
+        break;
+      }
+    }
+
+    if (!targetConv) {
+      throw new Error('Conversation not found.');
+    }
+
+    // Check terminal status (§48)
+    const job = createdJobsStore.get(targetConv.jobId);
+    if (job?.status === 'completed' || job?.status === 'cancelled') {
+      throw new Error(
+        `Conversation is locked: Job is in terminal status (${job.status.toUpperCase()}). Messages cannot be sent (§48).`
+      );
+    }
+
+    const newMsg: JobMessage = {
+      id: `msg_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      conversationId,
+      jobId: targetConv.jobId,
+      senderId: senderType === 'employer' ? targetConv.employerId : targetConv.workerId,
+      senderType,
+      body: body.trim(),
+      createdAt: new Date().toISOString(),
+    };
+
+    const existing = jobMessagesStore.get(conversationId) || [];
+    jobMessagesStore.set(conversationId, [...existing, newMsg]);
+
+    return newMsg;
   },
 };
 

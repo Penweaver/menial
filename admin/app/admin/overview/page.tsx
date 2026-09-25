@@ -1,300 +1,256 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import { getAdminOperationsService } from '@/lib/services';
 import type { OverviewMetricsData } from '@shared/services/operations/AdminOperationsService';
 import { useAdminAuth } from '@/lib/auth/auth-context';
-import Link from 'next/link';
+import { OverviewKpiGrid } from '@/components/dashboard/OverviewKpiGrid';
+import { AttentionQueuePanel } from '@/components/dashboard/AttentionQueuePanel';
 import {
-  Activity,
-  Users,
-  Briefcase,
-  UserCheck,
-  Scale,
-  ShieldAlert,
-  Wallet,
-  ArrowRight,
   RefreshCw,
-  TrendingUp,
-  CheckCircle,
-  AlertTriangle,
   Clock,
-  ChevronRight,
   Shield,
+  MapPin,
+  Briefcase,
+  Users,
+  AlertCircle,
+  ExternalLink,
+  Radio,
 } from 'lucide-react';
 
 export default function AdminOverviewPage() {
   const { adminContext } = useAdminAuth();
   const [data, setData] = useState<OverviewMetricsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-  const fetchMetrics = useCallback(async () => {
-    setIsLoading(true);
+  const fetchMetrics = useCallback(async (isSilent = false) => {
+    if (!isSilent) {
+      setIsLoading(true);
+    } else {
+      setIsRefreshing(true);
+    }
     setError(null);
+
     try {
       const ops = getAdminOperationsService();
       const res = await ops.getOverviewMetrics();
       setData(res);
+      setLastUpdated(new Date());
     } catch (err: unknown) {
       console.error('Failed to fetch admin overview metrics:', err);
-      // Graceful offline / fallback mock data (§94 non-fabricated baseline)
-      setData({
+      const errMsg = err instanceof Error ? err.message : 'Unknown database error';
+      setError(`Unable to retrieve live metrics: ${errMsg}`);
+      
+      // Fallback baseline (§94 non-fabricated structure) if no data has been loaded yet
+      setData((prev) => prev ?? {
         metrics: {
-          total_workers: 48,
-          total_employers: 22,
-          new_users_today: 5,
-          active_jobs_count: 14,
-          completed_jobs_count: 85,
-          cancelled_jobs_count: 3,
-          platform_revenue_kobo: 4250000, // ₦42,500.00
+          total_workers: 0,
+          total_employers: 0,
+          new_users_today: 0,
+          active_jobs_count: 0,
+          completed_jobs_count: 0,
+          cancelled_jobs_count: 0,
+          platform_revenue_kobo: 0,
           currency: 'NGN',
         },
         attention_queue: {
-          pending_verifications: 2,
-          open_disputes: 2,
-          open_safety_reports: 1,
+          pending_verifications: 0,
+          open_disputes: 0,
+          open_safety_reports: 0,
           failed_payments: 0,
           failed_payouts: 0,
         },
       });
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
   }, []);
 
+  // Initial load
   useEffect(() => {
-    fetchMetrics();
+    fetchMetrics(false);
   }, [fetchMetrics]);
+
+  // Periodic 30-second silent telemetry refresh
+  useEffect(() => {
+    const timer = setInterval(() => {
+      fetchMetrics(true);
+    }, 30000);
+
+    return () => clearInterval(timer);
+  }, [fetchMetrics]);
+
+  // Format last updated time in WAT (UTC+1)
+  const formatWatTime = (date: Date | null) => {
+    if (!date) return '--:--:-- WAT';
+    return date.toLocaleTimeString('en-GB', {
+      timeZone: 'Africa/Lagos',
+      hour12: false,
+    }) + ' WAT';
+  };
 
   return (
     <div className="space-y-6">
       {/* Top Banner Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <h1 className="text-2xl font-bold text-surface-dark tracking-tight">
               Marketplace Command Center
             </h1>
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary-container text-secondary-on-container text-xs font-bold">
-              <span className="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+              <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
               Live Grid Active
             </span>
           </div>
           <p className="text-xs text-surface-muted mt-1">
-            Real-time operational monitoring, corridor dispatch health, and urgent attention queues
+            Section 54 operational telemetry, double-entry ledger totals, and real-time corridor dispatch
           </p>
         </div>
 
-        <button
-          onClick={fetchMetrics}
-          disabled={isLoading}
-          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white border border-surface-border text-surface-dark hover:bg-surface-canvas text-xs font-semibold shadow-xs transition-colors self-start sm:self-auto"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 text-surface-muted ${isLoading ? 'animate-spin' : ''}`} />
-          Refresh Metrics
-        </button>
-      </div>
+        <div className="flex items-center gap-3 self-start sm:self-auto">
+          <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-white border border-surface-border rounded-xl text-xs text-surface-muted">
+            <Clock className="w-3.5 h-3.5 text-surface-muted" />
+            <span>Updated:</span>
+            <span className="font-mono font-semibold text-surface-dark tabular-nums">
+              {formatWatTime(lastUpdated)}
+            </span>
+          </div>
 
-      {/* Primary KPI Grid (§54) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Workers KPI */}
-        <div className="p-5 bg-white border border-surface-border rounded-2xl shadow-card space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-surface-muted uppercase tracking-wider">
-              Active Workers
-            </span>
-            <div className="p-2 rounded-xl bg-primary/10 text-primary">
-              <Users className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="flex items-baseline gap-2">
-            <span className="font-mono text-2xl font-extrabold text-surface-dark">
-              {data ? data.metrics.total_workers : '--'}
-            </span>
-            <span className="text-[11px] font-semibold text-secondary flex items-center gap-0.5">
-              <TrendingUp className="w-3 h-3" /> +{data ? data.metrics.new_users_today : 0} today
-            </span>
-          </div>
-          <p className="text-[11px] text-surface-muted">Onboarded in active labor corridors</p>
-        </div>
-
-        {/* Employers KPI */}
-        <div className="p-5 bg-white border border-surface-border rounded-2xl shadow-card space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-surface-muted uppercase tracking-wider">
-              Active Employers
-            </span>
-            <div className="p-2 rounded-xl bg-primary/10 text-primary">
-              <Briefcase className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="flex items-baseline gap-2">
-            <span className="font-mono text-2xl font-extrabold text-surface-dark">
-              {data ? data.metrics.total_employers : '--'}
-            </span>
-            <span className="text-[11px] text-surface-muted font-medium">Hiring accounts</span>
-          </div>
-          <p className="text-[11px] text-surface-muted">Individuals &amp; commercial accounts</p>
-        </div>
-
-        {/* Active Jobs KPI */}
-        <div className="p-5 bg-white border border-surface-border rounded-2xl shadow-card space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-surface-muted uppercase tracking-wider">
-              Active Dispatch
-            </span>
-            <div className="p-2 rounded-xl bg-secondary-container text-secondary-on-container">
-              <Activity className="w-4 h-4 animate-pulse" />
-            </div>
-          </div>
-          <div className="flex items-baseline gap-2">
-            <span className="font-mono text-2xl font-extrabold text-surface-dark">
-              {data ? data.metrics.active_jobs_count : '--'}
-            </span>
-            <span className="text-[11px] text-secondary font-bold">
-              {data ? data.metrics.completed_jobs_count : 0} completed
-            </span>
-          </div>
-          <p className="text-[11px] text-surface-muted">Currently in matching or execution</p>
-        </div>
-
-        {/* Platform Revenue KPI */}
-        <div className="p-5 bg-white border border-surface-border rounded-2xl shadow-card space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-surface-muted uppercase tracking-wider">
-              Platform Revenue
-            </span>
-            <div className="p-2 rounded-xl bg-primary text-white">
-              <Wallet className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="flex items-baseline gap-1">
-            <span className="font-mono text-2xl font-extrabold text-surface-dark tracking-tight">
-              ₦{data ? (data.metrics.platform_revenue_kobo / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 }) : '0.00'}
-            </span>
-          </div>
-          <p className="text-[11px] text-surface-muted">Immutable double-entry ledger total (§44)</p>
+          <button
+            onClick={() => fetchMetrics(false)}
+            disabled={isLoading || isRefreshing}
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white border border-surface-border text-surface-dark hover:bg-surface-canvas text-xs font-semibold shadow-xs transition-colors disabled:opacity-60"
+            title="Refresh overview metrics"
+          >
+            <RefreshCw
+              className={`w-3.5 h-3.5 text-surface-muted ${
+                isLoading || isRefreshing ? 'animate-spin' : ''
+              }`}
+            />
+            <span>{isLoading || isRefreshing ? 'Syncing...' : 'Refresh Metrics'}</span>
+          </button>
         </div>
       </div>
+
+      {/* Error Alert Banner */}
+      {error && (
+        <div className="p-4 rounded-xl bg-red-50 border border-error/30 text-error flex items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+          <button
+            onClick={() => fetchMetrics(false)}
+            className="font-bold underline hover:no-underline shrink-0"
+          >
+            Retry Connection
+          </button>
+        </div>
+      )}
+
+      {/* Regional Corridor Dispatch Bar */}
+      <div className="p-4 bg-white border border-surface-border rounded-2xl shadow-card flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <Radio className="w-4 h-4 text-secondary animate-pulse" />
+          <span className="text-xs font-bold text-surface-dark uppercase tracking-wider">
+            Operational Corridors:
+          </span>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-4 text-xs">
+          <div className="flex items-center gap-1.5">
+            <MapPin className="w-3.5 h-3.5 text-primary" />
+            <span className="font-semibold text-surface-dark">Lagos Metro</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-secondary" />
+            <span className="text-[11px] text-surface-muted">Lekki, Ikeja, Yaba</span>
+          </div>
+
+          <div className="h-4 w-px bg-surface-border hidden sm:block" />
+
+          <div className="flex items-center gap-1.5">
+            <MapPin className="w-3.5 h-3.5 text-primary" />
+            <span className="font-semibold text-surface-dark">Abuja FCT</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-secondary" />
+            <span className="text-[11px] text-surface-muted">Gwarinpa, Maitama, Wuse</span>
+          </div>
+
+          <div className="h-4 w-px bg-surface-border hidden md:block" />
+
+          <div className="flex items-center gap-1.5">
+            <MapPin className="w-3.5 h-3.5 text-primary" />
+            <span className="font-semibold text-surface-dark">Rivers State</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-secondary" />
+            <span className="text-[11px] text-surface-muted">Port Harcourt</span>
+          </div>
+        </div>
+
+        <div className="text-[11px] font-semibold text-secondary flex items-center gap-1">
+          <span className="w-2 h-2 rounded-full bg-secondary animate-ping" />
+          Corridors Healthy
+        </div>
+      </div>
+
+      {/* Primary KPI Grid (§54, §94) */}
+      <OverviewKpiGrid metrics={data?.metrics ?? null} isLoading={isLoading} />
 
       {/* Operational Attention Queue (§54) */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-bold text-surface-dark uppercase tracking-wider flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-tertiary" />
-            Attention Dispatch Queue (§54)
-          </h2>
-          <span className="text-xs text-surface-muted">Action required by operations staff</span>
-        </div>
+      <AttentionQueuePanel queue={data?.attention_queue ?? null} isLoading={isLoading} />
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Pending Verifications Card */}
-          <Link
-            href="/admin/verification"
-            className="group p-5 bg-white border border-surface-border rounded-2xl shadow-card hover:border-primary transition-all space-y-3"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-tertiary-container text-tertiary-on-container">
-                  <UserCheck className="w-4 h-4" />
-                </div>
-                <span className="text-xs font-bold text-surface-dark">Worker Verifications</span>
-              </div>
-              <span className="font-mono font-bold text-sm px-2.5 py-0.5 rounded-full bg-tertiary-container text-tertiary-on-container">
-                {data ? data.attention_queue.pending_verifications : 0}
-              </span>
-            </div>
-            <p className="text-xs text-surface-muted">
-              Pending 11-digit NIN identity submissions waiting for review &amp; NDPA verification.
-            </p>
-            <div className="flex items-center gap-1 text-xs font-bold text-primary group-hover:translate-x-0.5 transition-transform">
-              <span>Open Verification Queue</span>
-              <ChevronRight className="w-3.5 h-3.5" />
-            </div>
-          </Link>
-
-          {/* Active Disputes Card */}
-          <Link
-            href="/admin/disputes"
-            className="group p-5 bg-white border border-surface-border rounded-2xl shadow-card hover:border-error transition-all space-y-3"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-error-container text-error-on-container">
-                  <Scale className="w-4 h-4" />
-                </div>
-                <span className="text-xs font-bold text-surface-dark">Active Disputes</span>
-              </div>
-              <span className="font-mono font-bold text-sm px-2.5 py-0.5 rounded-full bg-error-container text-error-on-container">
-                {data ? data.attention_queue.open_disputes : 0}
-              </span>
-            </div>
-            <p className="text-xs text-surface-muted">
-              Contested jobs with frozen escrow vault funds awaiting photo evidence inspection.
-            </p>
-            <div className="flex items-center gap-1 text-xs font-bold text-error group-hover:translate-x-0.5 transition-transform">
-              <span>Arbitrate Disputes</span>
-              <ChevronRight className="w-3.5 h-3.5" />
-            </div>
-          </Link>
-
-          {/* Safety Reports / SOS Card */}
-          <Link
-            href="/admin/safety"
-            className="group p-5 bg-white border border-surface-border rounded-2xl shadow-card hover:border-error transition-all space-y-3"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-error text-white">
-                  <ShieldAlert className="w-4 h-4 animate-pulse" />
-                </div>
-                <span className="text-xs font-bold text-surface-dark">Emergency SOS Alerts</span>
-              </div>
-              <span className="font-mono font-bold text-sm px-2.5 py-0.5 rounded-full bg-error text-white animate-pulse">
-                {data ? data.attention_queue.open_safety_reports : 0}
-              </span>
-            </div>
-            <p className="text-xs text-surface-muted">
-              Urgent Section 49 in-person distress alerts with GPS coordinates and 112 dispatch.
-            </p>
-            <div className="flex items-center gap-1 text-xs font-bold text-error group-hover:translate-x-0.5 transition-transform">
-              <span>View SOS Alerts</span>
-              <ChevronRight className="w-3.5 h-3.5" />
-            </div>
-          </Link>
-        </div>
-      </div>
-
-      {/* Administrative Session Clearance */}
+      {/* Administrative Session Clearance & Direct Navigation */}
       <div className="p-5 bg-white border border-surface-border rounded-2xl shadow-card flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-xl bg-primary/10 text-primary shrink-0">
             <Shield className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-xs font-bold text-surface-dark">
-              Authenticated Session: {adminContext?.isSuperadmin ? 'Superadmin Root' : 'Operations Staff'}
+            <h3 className="text-xs font-bold text-surface-dark flex items-center gap-2">
+              Authenticated Session:{' '}
+              {adminContext?.isSuperadmin ? 'Superadmin Root Controller' : 'Operations Staff'}
+              <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-extrabold uppercase">
+                Active
+              </span>
             </h3>
-            <p className="text-[11px] text-surface-muted">
-              Role permissions: {adminContext?.permissions?.join(', ') || 'Operational monitoring'}
+            <p className="text-[11px] text-surface-muted mt-0.5">
+              Assigned clearances:{' '}
+              {adminContext?.permissions && adminContext.permissions.length > 0
+                ? adminContext.permissions.join(', ')
+                : 'Operational read-only monitoring'}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Link
             href="/admin/workers"
-            className="px-3.5 py-2 rounded-xl bg-surface-canvas hover:bg-surface-border text-surface-dark font-semibold text-xs transition-colors"
+            className="px-3.5 py-2 rounded-xl bg-surface-canvas hover:bg-slate-200 text-surface-dark font-semibold text-xs transition-colors flex items-center gap-1.5"
           >
-            Workers Directory
+            <Users className="w-3.5 h-3.5 text-surface-muted" />
+            <span>Workers Roster</span>
           </Link>
+
           <Link
             href="/admin/jobs"
-            className="px-3.5 py-2 rounded-xl bg-primary hover:bg-primary-hover text-white font-bold text-xs shadow-xs transition-colors"
+            className="px-3.5 py-2 rounded-xl bg-primary hover:bg-primary-hover text-white font-bold text-xs shadow-xs transition-colors flex items-center gap-1.5"
           >
-            Dispatch Feed
+            <Briefcase className="w-3.5 h-3.5" />
+            <span>Active Dispatch</span>
           </Link>
+
+          {adminContext?.isSuperadmin && (
+            <Link
+              href="/superadmin/overview"
+              className="px-3.5 py-2 rounded-xl bg-surface-dark hover:bg-black text-white font-bold text-xs shadow-xs transition-colors flex items-center gap-1.5"
+            >
+              <span>Governance Console</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </Link>
+          )}
         </div>
       </div>
     </div>

@@ -17,17 +17,46 @@ import { EmergencySosModal } from '../../../components/safety/EmergencySosModal'
 import { ActiveSosBanner } from '../../../components/safety/ActiveSosBanner';
 import { JobRatingModal } from '../../../components/trust/JobRatingModal';
 import { ApiService } from '../../../services/api';
+import { JobChatModal } from '../../../components/chat/JobChatModal';
+import { RealtimeSyncService } from '../../../services/supabase';
 
 export const EmployerActiveJobScreen: React.FC = () => {
   const [job, setJob] = useState<any>(ApiService.getActiveJob());
   const [loading, setLoading] = useState<boolean>(false);
   const [sosModalVisible, setSosModalVisible] = useState<boolean>(false);
   const [ratingModalVisible, setRatingModalVisible] = useState<boolean>(false);
+  const [chatModalVisible, setChatModalVisible] = useState<boolean>(false);
+  const [workerLocation, setWorkerLocation] = useState<{
+    latitude: number;
+    longitude: number;
+    timestamp: number;
+  } | null>(null);
 
-  // Sync state with createdJobsStore
+  // Sync state with createdJobsStore and subscribe to Supabase Realtime
   useEffect(() => {
     const current = ApiService.getActiveJob();
     setJob(current);
+
+    if (current?.id) {
+      // 1. Subscribe to job status updates (§31, §32)
+      const unsubStatus = RealtimeSyncService.subscribeToJobStatus(current.id, (updated) => {
+        setJob((prev: any) => ({ ...prev, ...updated }));
+      });
+
+      // 2. Subscribe to worker transit location broadcast (§49, §50)
+      const unsubLoc = RealtimeSyncService.subscribeToWorkerLocation(current.id, (loc) => {
+        setWorkerLocation({
+          latitude: loc.latitude,
+          longitude: loc.longitude,
+          timestamp: loc.timestamp,
+        });
+      });
+
+      return () => {
+        unsubStatus();
+        unsubLoc();
+      };
+    }
   }, []);
 
   const handleConfirmCompletion = async () => {
@@ -159,11 +188,36 @@ export const EmployerActiveJobScreen: React.FC = () => {
               <Text style={styles.workerName}>{job.workerName || 'Adebayo O.'}</Text>
               <Text style={styles.workerRole}>Assigned Verified Artisan · ★ 4.9</Text>
             </View>
+            <TouchableOpacity
+              style={styles.chatActionPill}
+              onPress={() => setChatModalVisible(true)}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Chat with worker"
+            >
+              <Text style={styles.chatActionText}>💬 Chat</Text>
+            </TouchableOpacity>
             <View style={styles.phonePill}>
               <Text style={styles.phoneText}>📞 Call Worker</Text>
             </View>
           </View>
         </Card>
+
+        {/* Real-time Transit Location Radar Card (§49, §50) */}
+        {job.status === 'worker_on_way' && workerLocation ? (
+          <Card style={styles.transitRadarCard}>
+            <View style={styles.transitRadarRow}>
+              <Text style={styles.transitRadarEmoji}>📡</Text>
+              <View style={styles.transitRadarInfo}>
+                <Text style={styles.transitRadarTitle}>Live Worker Transit Radar (§49)</Text>
+                <Text style={styles.transitRadarDesc}>
+                  Live GPS beacon: {workerLocation.latitude.toFixed(4)}° N, {workerLocation.longitude.toFixed(4)}° E
+                </Text>
+              </View>
+              <Badge label="IN TRANSIT" type="verified" />
+            </View>
+          </Card>
+        ) : null}
 
         {/* Real-time Journey Timeline */}
         <Card style={styles.timelineCard}>
@@ -389,6 +443,18 @@ export const EmployerActiveJobScreen: React.FC = () => {
         onRatingSubmitted={({ stars }) => {
           setJob({ ...job, rating: stars });
         }}
+      />
+
+      {/* Section 48 Real-time Job Chat Modal */}
+      <JobChatModal
+        visible={chatModalVisible}
+        onClose={() => setChatModalVisible(false)}
+        jobId={job.id}
+        publicJobId={job.publicJobId || 'MNL-2026-1042'}
+        jobTitle={job.title}
+        jobStatus={job.status}
+        currentUserRole="employer"
+        counterpartyName={job.workerName || 'Adebayo O.'}
       />
     </View>
   );
@@ -715,5 +781,46 @@ const styles = StyleSheet.create({
     color: '#D97706',
     fontWeight: '700',
     fontSize: 13,
+  },
+  chatActionPill: {
+    backgroundColor: COLORS.primaryContainer,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 8,
+    borderRadius: RADIUS.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: SPACING.xs,
+  },
+  chatActionText: {
+    color: COLORS.primary,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  transitRadarCard: {
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    padding: SPACING.md,
+  },
+  transitRadarRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  transitRadarEmoji: {
+    fontSize: 24,
+    marginRight: SPACING.sm,
+  },
+  transitRadarInfo: {
+    flex: 1,
+  },
+  transitRadarTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1E40AF',
+  },
+  transitRadarDesc: {
+    fontSize: 11,
+    color: '#3B82F6',
+    marginTop: 2,
   },
 });
