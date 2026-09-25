@@ -26,6 +26,7 @@ import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { ScreenFooter } from '../../components/common/ScreenFooter';
 import { ApiService } from '../../services/api';
+import { LocationService, NotificationService } from '../../services/hardware';
 import {
   EmergencyContact,
   EmergencyHotline,
@@ -117,25 +118,34 @@ export const SafetyCenterScreen: React.FC<Props> = ({ navigation }) => {
     );
   };
 
-  const handleTestSosAlert = () => {
+  const handleTestSosAlert = async () => {
     setTestingSos(true);
     setTestResult(null);
 
-    setTimeout(() => {
-      setTestingSos(false);
+    try {
+      const loc = await LocationService.getCurrentLocation();
       const testMsg = ApiService.formatEmergencyDistressMessage({
         publicJobId: 'MNL-TEST-READINESS',
         jobTitle: 'Safety Readiness Test',
-        locationText: 'Eti-Osa, Lagos State',
-        latitude: 6.4380,
-        longitude: 3.4280,
+        locationText: loc.addressText || 'Eti-Osa, Lagos State',
+        latitude: loc.latitude,
+        longitude: loc.longitude,
         reporterName: 'Authorized User',
         reporterRole: 'Marketplace Member',
         category: 'other',
         dossierRef: 'TEST-SIMULATION',
       });
       setTestResult(testMsg);
-    }, 900);
+
+      await NotificationService.sendLocalNotification(
+        '🛡️ Safety System Readiness Passed',
+        `GPS live at ${loc.latitude.toFixed(4)}, ${loc.longitude.toFixed(4)}. Emergency dispatch channel ready.`
+      );
+    } catch (err) {
+      console.warn('[SafetyCenter] Readiness test error:', err);
+    } finally {
+      setTestingSos(false);
+    }
   };
 
   return (

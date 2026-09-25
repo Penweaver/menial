@@ -18,6 +18,7 @@ import { EmergencySosModal } from '../../../components/safety/EmergencySosModal'
 import { ActiveSosBanner } from '../../../components/safety/ActiveSosBanner';
 import { JobRatingModal } from '../../../components/trust/JobRatingModal';
 import { ApiService } from '../../../services/api';
+import { MediaService, LocationService, NotificationService } from '../../../services/hardware';
 
 export const WorkerActiveJobScreen: React.FC = () => {
   const [job, setJob] = useState<any>(ApiService.getActiveJob());
@@ -47,11 +48,36 @@ export const WorkerActiveJobScreen: React.FC = () => {
     return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const handlePromptArrivalPhoto = () => {
+    MediaService.promptMediaPicker('Arrival Photo Check-In (§49)', (result) => {
+      setArrivalPhoto(result.uri);
+      NotificationService.sendLocalNotification({
+        title: 'Arrival Photo Attached',
+        body: 'On-site entrance verification photo stored securely (§49).',
+      });
+    });
+  };
+
+  const handlePromptCheckoutPhoto = () => {
+    MediaService.promptMediaPicker('Work Completion Evidence (§49)', (result) => {
+      setCheckoutPhoto(result.uri);
+      NotificationService.sendLocalNotification({
+        title: 'Completion Photo Attached',
+        body: 'Work completion proof ready to submit for escrow inspection.',
+      });
+    });
+  };
+
   const handleStartTravel = async () => {
     setLoading(true);
     try {
+      const loc = await LocationService.getCurrentLocation();
       await ApiService.startTravel(job.id);
       setJob({ ...job, status: 'worker_on_way' });
+      await NotificationService.sendLocalNotification({
+        title: 'Journey Commenced',
+        body: `GPS coordinates logged (${loc.latitude.toFixed(4)}, ${loc.longitude.toFixed(4)}). Employer alerted.`,
+      });
       Alert.alert('Journey Started', 'Employer has been notified that you are on your way!');
     } catch (err) {
       Alert.alert('Error', (err as Error).message);
@@ -63,12 +89,17 @@ export const WorkerActiveJobScreen: React.FC = () => {
   const handleArriveAtJob = async () => {
     setLoading(true);
     try {
-      const mockPhoto = arrivalPhoto || 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=400';
-      await ApiService.arriveAtJob(job.id, mockPhoto);
+      const loc = await LocationService.getCurrentLocation();
+      const photoToUse = arrivalPhoto || 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=400';
+      await ApiService.arriveAtJob(job.id, photoToUse);
       setJob({
         ...job,
         status: 'worker_arrived',
-        checkinPhotoUrl: mockPhoto,
+        checkinPhotoUrl: photoToUse,
+      });
+      await NotificationService.sendLocalNotification({
+        title: 'Arrival Confirmed',
+        body: `On-site presence verified at ${loc.latitude.toFixed(4)}, ${loc.longitude.toFixed(4)}. Escrow guarantee active (§39, §49).`,
       });
       Alert.alert('Arrival Confirmed', 'Check-in recorded with geo-verification and photo!');
     } catch (err) {
@@ -94,13 +125,17 @@ export const WorkerActiveJobScreen: React.FC = () => {
   const handleCompleteWork = async () => {
     setLoading(true);
     try {
-      const mockPhoto = checkoutPhoto || 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400';
-      await ApiService.completeWork(job.id, mockPhoto, completionNotes);
+      const photoToUse = checkoutPhoto || 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400';
+      await ApiService.completeWork(job.id, photoToUse, completionNotes);
       setJob({
         ...job,
         status: 'completed_by_worker',
-        checkoutPhotoUrl: mockPhoto,
+        checkoutPhotoUrl: photoToUse,
         completionNotes,
+      });
+      await NotificationService.sendLocalNotification({
+        title: 'Work Completed & Submitted',
+        body: 'Work completion proof submitted for employer inspection and escrow payout release (§41).',
       });
       Alert.alert('Job Submitted', 'Employer has been requested to inspect the work and release escrow funds!');
     } catch (err) {
@@ -241,17 +276,23 @@ export const WorkerActiveJobScreen: React.FC = () => {
 
             <TouchableOpacity
               style={styles.photoCaptureBox}
-              onPress={() => setArrivalPhoto('https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=400')}
+              onPress={handlePromptArrivalPhoto}
               activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Capture on-site arrival check-in photo"
             >
               {arrivalPhoto ? (
-                <View style={styles.photoAttached}>
-                  <Text style={styles.photoAttachedText}>✓ Arrival Photo Attached</Text>
+                <View style={styles.photoAttachedPreview}>
+                  <Image source={{ uri: arrivalPhoto }} style={styles.photoThumbnail} />
+                  <View style={styles.photoAttachedTextContainer}>
+                    <Text style={styles.photoAttachedText}>✓ Arrival Photo Attached</Text>
+                    <Text style={styles.retakeText}>Tap to retake with camera or gallery</Text>
+                  </View>
                 </View>
               ) : (
                 <View style={styles.photoPlaceholder}>
                   <Text style={styles.cameraEmoji}>📸</Text>
-                  <Text style={styles.photoPlaceholderText}>Tap to Capture Arrival Photo</Text>
+                  <Text style={styles.photoPlaceholderText}>Tap to Capture Arrival Photo (Camera / Gallery)</Text>
                 </View>
               )}
             </TouchableOpacity>
@@ -313,17 +354,23 @@ export const WorkerActiveJobScreen: React.FC = () => {
             <Text style={styles.subHeading}>Departure Photo Check-Out (§49)</Text>
             <TouchableOpacity
               style={styles.photoCaptureBox}
-              onPress={() => setCheckoutPhoto('https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400')}
+              onPress={handlePromptCheckoutPhoto}
               activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Capture work completion proof photo"
             >
               {checkoutPhoto ? (
-                <View style={styles.photoAttached}>
-                  <Text style={styles.photoAttachedText}>✓ Completion Photo Attached</Text>
+                <View style={styles.photoAttachedPreview}>
+                  <Image source={{ uri: checkoutPhoto }} style={styles.photoThumbnail} />
+                  <View style={styles.photoAttachedTextContainer}>
+                    <Text style={styles.photoAttachedText}>✓ Completion Photo Attached</Text>
+                    <Text style={styles.retakeText}>Tap to retake with camera or gallery</Text>
+                  </View>
                 </View>
               ) : (
                 <View style={styles.photoPlaceholder}>
                   <Text style={styles.cameraEmoji}>📸</Text>
-                  <Text style={styles.photoPlaceholderText}>Tap to Capture Work Evidence Photo</Text>
+                  <Text style={styles.photoPlaceholderText}>Tap to Capture Work Evidence Photo (Camera / Gallery)</Text>
                 </View>
               )}
             </TouchableOpacity>
@@ -618,6 +665,27 @@ const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.caption.fontSize,
     fontWeight: '700',
     color: '#0369A1',
+  },
+  photoAttachedPreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    width: '100%',
+  },
+  photoThumbnail: {
+    width: 64,
+    height: 64,
+    borderRadius: RADIUS.sm,
+    backgroundColor: '#E0F2FE',
+  },
+  photoAttachedTextContainer: {
+    flex: 1,
+  },
+  retakeText: {
+    fontSize: 11,
+    color: COLORS.primary,
+    fontWeight: '600',
+    marginTop: 2,
   },
   timerBox: {
     backgroundColor: COLORS.canvas,

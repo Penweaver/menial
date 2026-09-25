@@ -14,6 +14,7 @@ import { Button } from '../../components/common/Button';
 import { Card } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
 import { useWorker } from '../../context/WorkerContext';
+import { MediaService } from '../../services/hardware';
 
 type DocumentType = 'nin' | 'voters_card' | 'drivers_license' | 'international_passport';
 
@@ -31,7 +32,24 @@ export const WorkerVerificationScreen: React.FC<WorkerVerificationScreenProps> =
   const [documentType, setDocumentType] = useState<DocumentType>('nin');
   const [idNumber, setIdNumber] = useState('');
   const [photoAttached, setPhotoAttached] = useState(false);
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const handlePickDocumentPhoto = async () => {
+    try {
+      const photo = await MediaService.promptMediaPicker({
+        title: 'Upload Identity Document',
+        message: 'Take a photo with your camera or select an existing image from your gallery',
+      });
+      if (photo) {
+        setPhotoUri(photo.uri);
+        setPhotoAttached(true);
+        if (error) setError(null);
+      }
+    } catch (err) {
+      console.warn('[WorkerVerificationScreen] Photo picker error:', err);
+    }
+  };
 
   const docOptions: { type: DocumentType; label: string; hint: string }[] = [
     { type: 'nin', label: 'National ID (NIN)', hint: 'Strictly 11 digits issued by NIMC' },
@@ -63,7 +81,7 @@ export const WorkerVerificationScreen: React.FC<WorkerVerificationScreenProps> =
     const result = await submitVerification({
       documentType,
       idNumber: idNumber.trim(),
-      documentUrl: 'supabase://documents/mock_nin_slip.jpg',
+      documentUrl: photoUri || 'supabase://documents/mock_nin_slip.jpg',
     });
 
     if (result.success) {
@@ -181,14 +199,20 @@ export const WorkerVerificationScreen: React.FC<WorkerVerificationScreenProps> =
 
           <Card
             style={styles.uploadCard}
-            onPress={() => setPhotoAttached((prev) => !prev)}
+            onPress={handlePickDocumentPhoto}
           >
             {photoAttached ? (
               <View style={styles.attachedContainer}>
-                <Text style={styles.attachedIcon}>📄</Text>
+                {photoUri ? (
+                  <Image source={{ uri: photoUri }} style={styles.docThumbnail} />
+                ) : (
+                  <Text style={styles.attachedIcon}>📄</Text>
+                )}
                 <View style={styles.attachedTextGroup}>
-                  <Text style={styles.attachedTitle}>nin_slip_document.jpg</Text>
-                  <Text style={styles.attachedSubtitle}>Ready to upload • Tap to replace</Text>
+                  <Text style={styles.attachedTitle}>
+                    {photoUri ? 'id_document_capture.jpg' : 'nin_slip_document.jpg'}
+                  </Text>
+                  <Text style={styles.attachedSubtitle}>Ready to upload • Tap to change photo</Text>
                 </View>
                 <Badge label="ATTACHED" type="verified" />
               </View>
@@ -196,7 +220,7 @@ export const WorkerVerificationScreen: React.FC<WorkerVerificationScreenProps> =
               <View style={styles.uploadPlaceholder}>
                 <Text style={styles.cameraIcon}>📷</Text>
                 <Text style={styles.uploadTitle}>Tap to capture or upload ID document</Text>
-                <Text style={styles.uploadHint}>JPG, PNG or PDF (max 5MB)</Text>
+                <Text style={styles.uploadHint}>Camera or Gallery (compressed ≤ 150KB)</Text>
               </View>
             )}
           </Card>
@@ -395,6 +419,13 @@ const styles = StyleSheet.create({
     ...Typography.scale.bodySm,
     color: Colors.secondaryText,
     fontSize: 11,
+  },
+  docThumbnail: {
+    width: 44,
+    height: 44,
+    borderRadius: Radii.sm,
+    marginRight: Spacing.md,
+    backgroundColor: Colors.border,
   },
   submitButton: {
     marginTop: Spacing.sm,

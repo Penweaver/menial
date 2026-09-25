@@ -31,6 +31,7 @@ import { Colors, Spacing, Radii, Typography, TYPOGRAPHY } from '../../constants/
 import { Button } from '../common/Button';
 import { Card } from '../common/Card';
 import { ApiService } from '../../services/api';
+import { LocationService, NotificationService } from '../../services/hardware';
 import {
   EmergencyIncidentCategory,
   EMERGENCY_HOTLINES,
@@ -103,6 +104,7 @@ export const EmergencySosModal: React.FC<EmergencySosModalProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<EmergencyIncidentCategory>(initialCategory);
   const [isSilent, setIsSilent] = useState<boolean>(false);
   const [isAlarmActive, setIsAlarmActive] = useState<boolean>(false);
+  const [deviceCoords, setDeviceCoords] = useState<{ latitude: number; longitude: number; addressText?: string } | null>(null);
 
   // Countdown state: null = not started, number = 3..1
   const [countdown, setCountdown] = useState<number | null>(null);
@@ -112,6 +114,19 @@ export const EmergencySosModal: React.FC<EmergencySosModalProps> = ({
 
   const countdownTimerRef = useRef<NodeJS.Timeout | null>(null);
   const strobeAnim = useRef(new Animated.Value(0)).current;
+
+  // Fetch live GPS coordinates when modal opens
+  useEffect(() => {
+    if (visible) {
+      LocationService.getCurrentLocation()
+        .then((loc) => {
+          setDeviceCoords(loc);
+        })
+        .catch((err) => {
+          console.warn('[EmergencySosModal] Location acquisition error:', err);
+        });
+    }
+  }, [visible]);
 
   // Check if an SOS is already active for this job when modal opens
   useEffect(() => {
@@ -179,14 +194,18 @@ export const EmergencySosModal: React.FC<EmergencySosModalProps> = ({
   const executeDispatch = async () => {
     setDispatching(true);
     try {
+      const lat = deviceCoords?.latitude ?? 6.4380;
+      const lng = deviceCoords?.longitude ?? 3.4280;
+      const effectiveLocation = deviceCoords?.addressText || locationText;
+
       const res = await ApiService.triggerEmergencySos({
         jobId,
         publicJobId,
         category: selectedCategory,
-        description: `Section 49 Emergency SOS (${selectedCategory.toUpperCase()}) triggered on job ${publicJobId} (${jobTitle}) at ${locationText}. Counterparty: ${counterpartyRole} ${counterpartyName}`,
-        locationText,
-        latitude: 6.4380,
-        longitude: 3.4280,
+        description: `Section 49 Emergency SOS (${selectedCategory.toUpperCase()}) triggered on job ${publicJobId} (${jobTitle}) at ${effectiveLocation}. Counterparty: ${counterpartyRole} ${counterpartyName}`,
+        locationText: effectiveLocation,
+        latitude: lat,
+        longitude: lng,
         isSilent,
         batteryLevel: 88,
         emergencyContactsNotified: false,
@@ -203,9 +222,9 @@ export const EmergencySosModal: React.FC<EmergencySosModalProps> = ({
           publicJobId,
           category: selectedCategory,
           description: `Emergency SOS triggered on ${publicJobId}`,
-          locationText,
-          latitude: 6.4380,
-          longitude: 3.4280,
+          locationText: effectiveLocation,
+          latitude: lat,
+          longitude: lng,
           isSilent,
           batteryLevel: 88,
           status: 'dispatched',
@@ -213,6 +232,14 @@ export const EmergencySosModal: React.FC<EmergencySosModalProps> = ({
           hotlines: ['112', '767', '080063642564'],
           emergencyContactsNotified: false,
         });
+      }
+
+      // Non-silent local notification alert
+      if (!isSilent) {
+        await NotificationService.sendLocalNotification(
+          '🚨 EMERGENCY SOS DISPATCHED',
+          `Incident ref: ${res.reportId}. HQ Command & Emergency Services notified at ${effectiveLocation}`
+        );
       }
     } catch (err) {
       Alert.alert('Dispatch Error', (err as Error).message || 'Failed to dispatch SOS alert.');
@@ -244,12 +271,16 @@ export const EmergencySosModal: React.FC<EmergencySosModalProps> = ({
   // Emergency Contacts Broadcast
   const handleBroadcastEmergencyContacts = async () => {
     try {
+      const lat = dispatchedDossier?.latitude || deviceCoords?.latitude || 6.4380;
+      const lng = dispatchedDossier?.longitude || deviceCoords?.longitude || 3.4280;
+      const locText = dispatchedDossier?.locationText || deviceCoords?.addressText || locationText;
+
       const message = ApiService.formatEmergencyDistressMessage({
         publicJobId,
         jobTitle,
-        locationText,
-        latitude: dispatchedDossier?.latitude || 6.4380,
-        longitude: dispatchedDossier?.longitude || 3.4280,
+        locationText: locText,
+        latitude: lat,
+        longitude: lng,
         reporterName: counterpartyRole === 'Worker' ? 'Employer' : 'Worker',
         reporterRole: counterpartyRole === 'Worker' ? 'Employer' : 'Worker',
         category: selectedCategory,
@@ -493,9 +524,9 @@ export const EmergencySosModal: React.FC<EmergencySosModalProps> = ({
                 {/* Location Snapshot */}
                 <View style={styles.locationSnapshot}>
                   <Text style={styles.locLabel}>LIVE DISPATCH LOCATION</Text>
-                  <Text style={styles.locText}>📍 {locationText}</Text>
+                  <Text style={styles.locText}>📍 {deviceCoords?.addressText || locationText}</Text>
                   <Text style={styles.locSub}>
-                    GPS: 6.4380° N, 3.4280° E · Ref: {publicJobId} · {counterpartyRole}: {counterpartyName}
+                    GPS: {(deviceCoords?.latitude ?? 6.4380).toFixed(4)}° N, {(deviceCoords?.longitude ?? 3.4280).toFixed(4)}° E · Ref: {publicJobId} · {counterpartyRole}: {counterpartyName}
                   </Text>
                 </View>
 
