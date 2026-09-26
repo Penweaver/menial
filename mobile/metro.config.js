@@ -26,4 +26,14 @@ config.resolver.extraNodeModules = {
   crypto: path.resolve(projectRoot, 'src/shims/crypto.js'),
 };
 
+// 4. Ensure Metro resolves React Native / Browser condition exports for Supabase
+config.resolver.unstable_conditionNames = ['browser', 'require', 'react-native'];
+
+if (!config.resolver.sourceExts.includes('cjs')) {
+  config.resolver.sourceExts.push('cjs');
+}
+if (!config.resolver.sourceExts.includes('mjs')) {
+  config.resolver.sourceExts.push('mjs');
+}
+
 module.exports = config;

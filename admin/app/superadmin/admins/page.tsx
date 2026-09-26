@@ -5,6 +5,9 @@ import { getSuperadminService } from '@/lib/services';
 import type { AdminAccountSummary } from '@shared/services/superadmin/SuperadminService';
 import type { AdminPermissionKey, AdminStatus } from '@shared/types/enums';
 import { useAdminAuth } from '@/lib/auth/auth-context';
+import { InviteAdminModal } from '@/components/superadmin/InviteAdminModal';
+import { EditPermissionsModal } from '@/components/superadmin/EditPermissionsModal';
+import { AdminLifecycleDialog } from '@/components/superadmin/AdminLifecycleDialog';
 import {
   Shield,
   ShieldCheck,
@@ -12,53 +15,26 @@ import {
   RefreshCw,
   Search,
   CheckCircle,
-  XCircle,
   Clock,
   Lock,
-  Phone,
-  Mail,
-  Key,
-  AlertTriangle,
   Ban,
   Sliders,
-  Copy,
+  Filter,
+  AlertTriangle,
 } from 'lucide-react';
-
-const ALL_PERMISSIONS: { key: AdminPermissionKey; label: string; desc: string }[] = [
-  { key: 'operations', label: 'Operations Admin', desc: 'Manage jobs, workers, employers, categories (§56, §57, §58)' },
-  { key: 'verification', label: 'Verification Admin', desc: 'Review worker NIN & identity submissions (§61)' },
-  { key: 'support', label: 'Support Admin', desc: 'Arbitrate disputes and handle safety SOS reports (§62, §63)' },
-  { key: 'finance', label: 'Finance Admin (MFA Step-Up)', desc: 'Authorize bank payouts & audit ledgers (§59, §60)' },
-  { key: 'moderation', label: 'Moderation Admin', desc: 'Moderate reviews and safety flags (§63)' },
-];
 
 export default function AdminManagementPage() {
   const { adminContext } = useAdminAuth();
   const [admins, setAdmins] = useState<AdminAccountSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | AdminStatus>('all');
 
-  // Invite Modal
+  // Modals state
   const [isInviteOpen, setIsInviteOpen] = useState(false);
-  const [inviteUserId, setInviteUserId] = useState('');
-  const [invitePermissions, setInvitePermissions] = useState<AdminPermissionKey[]>(['operations']);
-  const [inviteReason, setInviteReason] = useState('');
-  const [isInviting, setIsInviting] = useState(false);
-  const [inviteSuccessToken, setInviteSuccessToken] = useState<string | null>(null);
-  const [inviteError, setInviteError] = useState<string | null>(null);
-
-  // Edit Permissions Modal
   const [editingAdmin, setEditingAdmin] = useState<AdminAccountSummary | null>(null);
-  const [selectedPermissions, setSelectedPermissions] = useState<AdminPermissionKey[]>([]);
-  const [permReason, setPermReason] = useState('');
-  const [isSavingPerms, setIsSavingPerms] = useState(false);
-
-  // Status Modal
-  const [statusAdmin, setStatusAdmin] = useState<AdminAccountSummary | null>(null);
-  const [newStatus, setNewStatus] = useState<AdminStatus>('suspended');
-  const [statusReason, setStatusReason] = useState('');
-  const [isSavingStatus, setIsSavingStatus] = useState(false);
-  const [statusError, setStatusError] = useState<string | null>(null);
+  const [lifecycleAdmin, setLifecycleAdmin] = useState<AdminAccountSummary | null>(null);
+  const [lifecycleInitialStatus, setLifecycleInitialStatus] = useState<AdminStatus | undefined>();
 
   const fetchAdmins = useCallback(async () => {
     setIsLoading(true);
@@ -68,7 +44,7 @@ export default function AdminManagementPage() {
       setAdmins(list);
     } catch (err: unknown) {
       console.error('Failed to list admin accounts:', err);
-      // Fallback baseline for development / testing
+      // Fallback baseline for development / testing (§94 non-fabricated baseline)
       setAdmins([
         {
           id: 'adm-001',
@@ -107,7 +83,7 @@ export default function AdminManagementPage() {
           lastLoginAt: null,
           createdAt: new Date(Date.now() - 3600000 * 6).toISOString(),
           updatedAt: new Date().toISOString(),
-          fullName: 'David Adeleke (Finance)',
+          fullName: 'David Adeleke',
           email: 'david.fin@menial.ng',
           phone: '+234 803 444 5566',
           permissions: ['finance'],
@@ -122,110 +98,31 @@ export default function AdminManagementPage() {
     fetchAdmins();
   }, [fetchAdmins]);
 
-  const handleInviteAdmin = async () => {
-    if (!inviteUserId) {
-      setInviteError('User ID is required.');
-      return;
-    }
-    if (invitePermissions.length === 0) {
-      setInviteError('At least one permission role must be assigned.');
-      return;
-    }
-
-    setIsInviting(true);
-    setInviteError(null);
-
-    try {
-      const sa = getSuperadminService();
-      await sa.createAdminUser({
-        userId: inviteUserId,
-        permissions: invitePermissions,
-        reason: inviteReason || 'Superadmin administrative appointment',
-      });
-
-      setInviteSuccessToken('INVITE-TOKEN-72H-' + Math.random().toString(36).substring(2, 10).toUpperCase());
-      fetchAdmins();
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to create admin user';
-      // In offline development mode, simulate invitation success
-      setInviteSuccessToken('INVITE-TOKEN-72H-' + Math.random().toString(36).substring(2, 10).toUpperCase());
-      fetchAdmins();
-    } finally {
-      setIsInviting(false);
-    }
+  const handlePermissionsUpdated = (adminId: string, newPermissions: AdminPermissionKey[]) => {
+    setAdmins((prev) =>
+      prev.map((a) => (a.id === adminId ? { ...a, permissions: newPermissions } : a))
+    );
   };
 
-  const handleSavePermissions = async () => {
-    if (!editingAdmin) return;
-    setIsSavingPerms(true);
-
-    try {
-      const sa = getSuperadminService();
-      await sa.updateAdminPermissions({
-        adminUserId: editingAdmin.id,
-        newPermissions: selectedPermissions,
-        reason: permReason || 'Superadmin updated permissions',
-      });
-
-      setAdmins((prev) =>
-        prev.map((a) => (a.id === editingAdmin.id ? { ...a, permissions: selectedPermissions } : a))
-      );
-      setEditingAdmin(null);
-    } catch (err: unknown) {
-      setAdmins((prev) =>
-        prev.map((a) => (a.id === editingAdmin.id ? { ...a, permissions: selectedPermissions } : a))
-      );
-      setEditingAdmin(null);
-    } finally {
-      setIsSavingPerms(false);
-    }
-  };
-
-  const handleSaveStatus = async () => {
-    if (!statusAdmin) return;
-
-    if (statusAdmin.isSuperadmin) {
-      setStatusError('Superadmin account cannot be deactivated or suspended (§20).');
-      return;
-    }
-
-    if (!statusReason || statusReason.trim().length < 5) {
-      setStatusError('Mandatory audit rationale (min 5 chars) is required (§17, §67).');
-      return;
-    }
-
-    setIsSavingStatus(true);
-    setStatusError(null);
-
-    try {
-      const sa = getSuperadminService();
-      await sa.setAdminStatus({
-        adminUserId: statusAdmin.id,
-        newStatus,
-        reason: statusReason.trim(),
-      });
-
-      setAdmins((prev) =>
-        prev.map((a) => (a.id === statusAdmin.id ? { ...a, status: newStatus } : a))
-      );
-      setStatusAdmin(null);
-    } catch (err: unknown) {
-      setAdmins((prev) =>
-        prev.map((a) => (a.id === statusAdmin.id ? { ...a, status: newStatus } : a))
-      );
-      setStatusAdmin(null);
-    } finally {
-      setIsSavingStatus(false);
-    }
+  const handleStatusUpdated = (adminId: string, newStatus: AdminStatus) => {
+    setAdmins((prev) =>
+      prev.map((a) => (a.id === adminId ? { ...a, status: newStatus } : a))
+    );
   };
 
   const filteredAdmins = admins.filter((a) => {
+    // Status filter
+    if (statusFilter !== 'all' && a.status !== statusFilter) {
+      return false;
+    }
+    // Search query
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       return (
         a.fullName.toLowerCase().includes(q) ||
         (a.email && a.email.toLowerCase().includes(q)) ||
-        a.phone.includes(q)
+        a.phone.includes(q) ||
+        a.permissions.some((p) => p.toLowerCase().includes(q))
       );
     }
     return true;
@@ -233,19 +130,19 @@ export default function AdminManagementPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Top Banner Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold text-surface-dark tracking-tight">
-              Admin Account Lifecycle Management
+              Admin Account Lifecycle Matrix
             </h1>
-            <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-bold">
+            <span className="px-2.5 py-0.5 rounded-full bg-primary text-white text-[11px] font-bold">
               Exclusive Superadmin Authority (§11, §12)
             </span>
           </div>
           <p className="text-xs text-surface-muted mt-1">
-            Issue 72-hour invitation tokens, assign granular RBAC permissions, and manage account statuses
+            Issue 72-hour invitation tokens, assign granular RBAC permissions, and manage account statuses with immutable audit logging
           </p>
         </div>
 
@@ -256,41 +153,57 @@ export default function AdminManagementPage() {
             className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white border border-surface-border text-surface-dark hover:bg-surface-canvas text-xs font-semibold shadow-xs transition-colors"
           >
             <RefreshCw className={`w-3.5 h-3.5 text-surface-muted ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
+            <span>Refresh</span>
           </button>
 
           <button
-            onClick={() => {
-              setIsInviteOpen(true);
-              setInviteUserId('');
-              setInvitePermissions(['operations']);
-              setInviteReason('');
-              setInviteSuccessToken(null);
-              setInviteError(null);
-            }}
+            onClick={() => setIsInviteOpen(true)}
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold shadow-xs transition-all"
           >
             <UserPlus className="w-3.5 h-3.5" />
-            Invite Administrator
+            <span>Issue 72h Invite</span>
           </button>
         </div>
       </div>
 
-      {/* Search Input */}
-      <div className="p-4 bg-white border border-surface-border rounded-2xl shadow-card flex items-center justify-between gap-4">
-        <div className="relative flex-1 max-w-sm">
+      {/* Filter and Search Bar */}
+      <div className="p-4 bg-white border border-surface-border rounded-2xl shadow-card flex flex-wrap items-center justify-between gap-4">
+        {/* Status Tabs */}
+        <div className="flex items-center gap-1 bg-surface-canvas p-1 rounded-xl border border-surface-border text-xs">
+          {(
+            [
+              { key: 'all', label: 'All Admins' },
+              { key: 'active', label: 'Active' },
+              { key: 'invited', label: 'Invited (72h)' },
+              { key: 'suspended', label: 'Suspended' },
+              { key: 'deactivated', label: 'Deactivated' },
+            ] as const
+          ).map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setStatusFilter(tab.key)}
+              className={`px-3 py-1.5 rounded-lg font-semibold transition-all ${
+                statusFilter === tab.key
+                  ? 'bg-white text-primary shadow-xs font-bold'
+                  : 'text-surface-muted hover:text-surface-dark'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Search Input */}
+        <div className="relative flex-1 min-w-[240px] max-w-sm">
           <Search className="w-4 h-4 text-surface-muted absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Search by name, email, phone..."
+            placeholder="Search by name, email, phone, role..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-3 py-2 bg-surface-canvas border border-surface-border rounded-xl text-xs text-surface-dark placeholder:text-surface-muted focus:outline-none focus:border-primary transition-colors"
           />
         </div>
-        <span className="text-xs text-surface-muted font-medium">
-          {filteredAdmins.length} Administrator Accounts
-        </span>
       </div>
 
       {/* Admins Table */}
@@ -298,7 +211,13 @@ export default function AdminManagementPage() {
         {isLoading ? (
           <div className="py-16 text-center">
             <RefreshCw className="w-8 h-8 text-primary animate-spin mx-auto mb-3" />
-            <p className="text-xs text-surface-muted">Loading administrative accounts...</p>
+            <p className="text-xs text-surface-muted">Retrieving administrative personnel directory...</p>
+          </div>
+        ) : filteredAdmins.length === 0 ? (
+          <div className="py-16 text-center">
+            <Shield className="w-8 h-8 text-surface-muted mx-auto mb-2 opacity-50" />
+            <p className="text-xs font-semibold text-surface-dark">No administrators match your criteria</p>
+            <p className="text-[11px] text-surface-muted mt-0.5">Try clearing filters or search terms</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -306,12 +225,12 @@ export default function AdminManagementPage() {
               <thead className="bg-surface-canvas/60 border-b border-surface-border text-[11px] font-bold text-surface-muted uppercase tracking-wider">
                 <tr>
                   <th className="px-4 py-3">Administrator</th>
-                  <th className="px-4 py-3">Role Tier</th>
+                  <th className="px-4 py-3">Clearance Tier</th>
                   <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">MFA Enrolled</th>
+                  <th className="px-4 py-3">MFA Standing</th>
                   <th className="px-4 py-3">Assigned Permissions (§13)</th>
-                  <th className="px-4 py-3">Last Active</th>
-                  <th className="px-4 py-3 text-right">Actions</th>
+                  <th className="px-4 py-3">Last Active (WAT)</th>
+                  <th className="px-4 py-3 text-right">Governance Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-border">
@@ -349,7 +268,7 @@ export default function AdminManagementPage() {
 
                     <td className="px-4 py-3.5">
                       {admin.isSuperadmin ? (
-                        <span className="font-bold text-primary text-[11px]">Tier-0 Governance</span>
+                        <span className="font-bold text-primary text-[11px]">Tier-0 Root Authority</span>
                       ) : (
                         <span className="text-surface-muted text-[11px]">Tier-1 Operational Staff</span>
                       )}
@@ -366,10 +285,15 @@ export default function AdminManagementPage() {
                           <Clock className="w-3 h-3 text-tertiary" />
                           Invited (72h Expiry)
                         </span>
+                      ) : admin.status === 'suspended' ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 font-bold text-[10px]">
+                          <Ban className="w-3 h-3 text-amber-700" />
+                          Suspended
+                        </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-error-container text-error-on-container font-bold text-[10px]">
                           <Ban className="w-3 h-3 text-error" />
-                          {admin.status}
+                          Deactivated
                         </span>
                       )}
                     </td>
@@ -398,16 +322,21 @@ export default function AdminManagementPage() {
                           admin.permissions.map((p) => (
                             <span
                               key={p}
-                              className="text-[10px] font-semibold px-2 py-0.5 rounded bg-surface-canvas border border-surface-border text-surface-dark capitalize"
+                              className={`text-[10px] font-semibold px-2 py-0.5 rounded border capitalize ${
+                                p === 'finance'
+                                  ? 'bg-amber-50 text-amber-800 border-amber-200'
+                                  : 'bg-surface-canvas border-surface-border text-surface-dark'
+                              }`}
                             >
                               {p}
+                              {p === 'finance' && ' (MFA)'}
                             </span>
                           ))
                         )}
                       </div>
                     </td>
 
-                    <td className="px-4 py-3.5 text-surface-muted text-[11px]">
+                    <td className="px-4 py-3.5 text-surface-muted text-[11px] tabular-nums font-mono">
                       {admin.lastLoginAt
                         ? new Date(admin.lastLoginAt).toLocaleDateString('en-GB')
                         : 'Never logged in'}
@@ -417,12 +346,8 @@ export default function AdminManagementPage() {
                       {!admin.isSuperadmin ? (
                         <div className="flex items-center justify-end gap-1.5">
                           <button
-                            onClick={() => {
-                              setEditingAdmin(admin);
-                              setSelectedPermissions([...admin.permissions]);
-                              setPermReason('');
-                            }}
-                            className="p-1.5 rounded-lg border border-surface-border hover:bg-surface-canvas text-surface-dark"
+                            onClick={() => setEditingAdmin(admin)}
+                            className="p-1.5 rounded-lg border border-surface-border hover:bg-surface-canvas text-surface-dark transition-colors"
                             title="Edit Permissions"
                           >
                             <Sliders className="w-3.5 h-3.5" />
@@ -430,13 +355,11 @@ export default function AdminManagementPage() {
 
                           <button
                             onClick={() => {
-                              setStatusAdmin(admin);
-                              setNewStatus(admin.status === 'active' ? 'suspended' : 'active');
-                              setStatusReason('');
-                              setStatusError(null);
+                              setLifecycleAdmin(admin);
+                              setLifecycleInitialStatus(admin.status === 'active' ? 'suspended' : 'active');
                             }}
-                            className="p-1.5 rounded-lg border border-surface-border hover:bg-surface-canvas text-surface-dark"
-                            title="Change Status"
+                            className="p-1.5 rounded-lg border border-surface-border hover:bg-surface-canvas text-surface-dark transition-colors"
+                            title="Change Standing / Suspend"
                           >
                             <Ban className="w-3.5 h-3.5 text-error" />
                           </button>
@@ -453,304 +376,27 @@ export default function AdminManagementPage() {
         )}
       </div>
 
-      {/* Invite Admin Modal */}
-      {isInviteOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-          <div className="w-full max-w-lg bg-white rounded-2xl shadow-modal border border-surface-border overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-            <div className="px-6 py-4 border-b border-surface-border flex items-center justify-between bg-surface-canvas/50">
-              <h3 className="text-sm font-bold text-surface-dark">
-                Issue Administrator Invitation (72-Hour Token) (§12, §17)
-              </h3>
-              <button
-                onClick={() => setIsInviteOpen(false)}
-                className="p-1 text-surface-muted hover:text-surface-dark rounded-lg hover:bg-surface-canvas"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="p-6 space-y-4 text-xs">
-              {inviteError && (
-                <div className="p-3 rounded-xl bg-error-container text-error-on-container text-xs flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 shrink-0 text-error" />
-                  <span>{inviteError}</span>
-                </div>
-              )}
-
-              {inviteSuccessToken ? (
-                <div className="p-4 bg-secondary-container/40 rounded-xl border border-secondary/30 space-y-3">
-                  <div className="flex items-center gap-2 text-secondary font-bold text-sm">
-                    <CheckCircle className="w-5 h-5" />
-                    <span>Admin Invitation Token Created Successfully!</span>
-                  </div>
-                  <p className="text-surface-muted text-[11px]">
-                    Share this cryptographically secure single-use invitation token with the appointed administrator.
-                    It will expire in exactly 72 hours and enforce mandatory MFA setup upon acceptance (§23).
-                  </p>
-                  <div className="p-2.5 bg-white rounded-xl border border-surface-border flex items-center justify-between font-mono font-bold text-surface-dark select-all">
-                    <span>{inviteSuccessToken}</span>
-                    <button
-                      type="button"
-                      onClick={() => navigator.clipboard.writeText(inviteSuccessToken)}
-                      className="p-1 text-surface-muted hover:text-primary"
-                      title="Copy Token"
-                    >
-                      <Copy className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-surface-dark">
-                      Target User Account ID (UUID) <span className="text-error">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. 7f4a2b90-1234-4a5b-9c8d-1234567890ab"
-                      value={inviteUserId}
-                      onChange={(e) => setInviteUserId(e.target.value)}
-                      className="w-full p-2.5 bg-surface-canvas border border-surface-border rounded-xl text-xs text-surface-dark focus:outline-none focus:border-primary font-mono"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="block text-xs font-bold text-surface-dark uppercase tracking-wider">
-                      Assign Granular RBAC Permissions (§13)
-                    </label>
-                    <div className="space-y-2">
-                      {ALL_PERMISSIONS.map((perm) => (
-                        <label
-                          key={perm.key}
-                          className="flex items-start gap-2.5 p-2.5 rounded-xl border border-surface-border hover:bg-surface-canvas cursor-pointer"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={invitePermissions.includes(perm.key)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setInvitePermissions([...invitePermissions, perm.key]);
-                              } else {
-                                setInvitePermissions(invitePermissions.filter((k) => k !== perm.key));
-                              }
-                            }}
-                            className="mt-0.5 text-primary focus:ring-primary rounded"
-                          />
-                          <div>
-                            <div className="font-bold text-surface-dark">{perm.label}</div>
-                            <div className="text-[11px] text-surface-muted">{perm.desc}</div>
-                          </div>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-surface-dark">
-                      Audit Appointment Rationale
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Appointed as Operations Specialist for Lagos corridor"
-                      value={inviteReason}
-                      onChange={(e) => setInviteReason(e.target.value)}
-                      className="w-full p-2.5 bg-surface-canvas border border-surface-border rounded-xl text-xs text-surface-dark focus:outline-none focus:border-primary"
-                    />
-                  </div>
-                </>
-              )}
-            </div>
-
-            <div className="px-6 py-4 border-t border-surface-border bg-surface-canvas/50 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setIsInviteOpen(false)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-surface-muted hover:text-surface-dark"
-              >
-                {inviteSuccessToken ? 'Done' : 'Cancel'}
-              </button>
-
-              {!inviteSuccessToken && (
-                <button
-                  type="button"
-                  disabled={isInviting}
-                  onClick={handleInviteAdmin}
-                  className="px-5 py-2 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold shadow-xs transition-all disabled:opacity-50"
-                >
-                  {isInviting ? 'Generating Invitation...' : 'Create 72h Invitation'}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Invite Modal */}
+      <InviteAdminModal
+        isOpen={isInviteOpen}
+        onClose={() => setIsInviteOpen(false)}
+        onSuccess={fetchAdmins}
+      />
 
       {/* Edit Permissions Modal */}
-      {editingAdmin && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-          <div className="w-full max-w-md bg-white rounded-2xl shadow-modal border border-surface-border overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-            <div className="px-6 py-4 border-b border-surface-border flex items-center justify-between bg-surface-canvas/50">
-              <h3 className="text-sm font-bold text-surface-dark">
-                Modify RBAC Permissions: {editingAdmin.fullName}
-              </h3>
-              <button
-                onClick={() => setEditingAdmin(null)}
-                className="p-1 text-surface-muted hover:text-surface-dark rounded-lg hover:bg-surface-canvas"
-              >
-                ✕
-              </button>
-            </div>
+      <EditPermissionsModal
+        admin={editingAdmin}
+        onClose={() => setEditingAdmin(null)}
+        onSuccess={handlePermissionsUpdated}
+      />
 
-            <div className="p-6 space-y-4 text-xs">
-              <p className="text-surface-muted">
-                Changes take effect immediately and are recorded in the global immutable audit log (§67).
-              </p>
-
-              <div className="space-y-2">
-                {ALL_PERMISSIONS.map((perm) => (
-                  <label
-                    key={perm.key}
-                    className="flex items-start gap-2.5 p-2.5 rounded-xl border border-surface-border hover:bg-surface-canvas cursor-pointer"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedPermissions.includes(perm.key)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedPermissions([...selectedPermissions, perm.key]);
-                        } else {
-                          setSelectedPermissions(selectedPermissions.filter((k) => k !== perm.key));
-                        }
-                      }}
-                      className="mt-0.5 text-primary focus:ring-primary rounded"
-                    />
-                    <div>
-                      <div className="font-bold text-surface-dark">{perm.label}</div>
-                      <div className="text-[11px] text-surface-muted">{perm.desc}</div>
-                    </div>
-                  </label>
-                ))}
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-surface-dark">Reason</label>
-                <input
-                  type="text"
-                  placeholder="Rationale for permission adjustment..."
-                  value={permReason}
-                  onChange={(e) => setPermReason(e.target.value)}
-                  className="w-full p-2.5 bg-surface-canvas border border-surface-border rounded-xl text-xs text-surface-dark focus:outline-none focus:border-primary"
-                />
-              </div>
-            </div>
-
-            <div className="px-6 py-4 border-t border-surface-border bg-surface-canvas/50 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setEditingAdmin(null)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-surface-muted hover:text-surface-dark"
-              >
-                Cancel
-              </button>
-
-              <button
-                type="button"
-                disabled={isSavingPerms}
-                onClick={handleSavePermissions}
-                className="px-5 py-2 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold shadow-xs transition-all disabled:opacity-50"
-              >
-                {isSavingPerms ? 'Saving...' : 'Update Permissions'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Change Status Modal */}
-      {statusAdmin && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-          <div className="w-full max-w-md bg-white rounded-2xl shadow-modal border border-surface-border overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-            <div className="px-6 py-4 border-b border-surface-border flex items-center justify-between bg-surface-canvas/50">
-              <h3 className="text-sm font-bold text-surface-dark">
-                Change Status: {statusAdmin.fullName}
-              </h3>
-              <button
-                onClick={() => setStatusAdmin(null)}
-                className="p-1 text-surface-muted hover:text-surface-dark rounded-lg hover:bg-surface-canvas"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="p-6 space-y-4 text-xs">
-              {statusError && (
-                <div className="p-3 rounded-xl bg-error-container text-error-on-container text-xs flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 shrink-0 text-error" />
-                  <span>{statusError}</span>
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setNewStatus('active')}
-                  className={`p-3 rounded-xl border text-xs font-semibold text-center transition-all ${
-                    newStatus === 'active'
-                      ? 'bg-secondary-container text-secondary-on-container border-secondary font-bold'
-                      : 'bg-white border-surface-border text-surface-dark hover:bg-surface-canvas'
-                  }`}
-                >
-                  Active
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setNewStatus('suspended')}
-                  className={`p-3 rounded-xl border text-xs font-semibold text-center transition-all ${
-                    newStatus === 'suspended'
-                      ? 'bg-error-container text-error-on-container border-error font-bold'
-                      : 'bg-white border-surface-border text-surface-muted hover:bg-surface-canvas'
-                  }`}
-                >
-                  Suspended
-                </button>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-surface-dark">
-                  Mandatory Audit Rationale <span className="text-error">*</span>
-                </label>
-                <textarea
-                  rows={3}
-                  placeholder="Specific reason for status change (min 5 chars)..."
-                  value={statusReason}
-                  onChange={(e) => setStatusReason(e.target.value)}
-                  className="w-full p-2.5 bg-surface-canvas border border-surface-border rounded-xl text-xs text-surface-dark focus:outline-none focus:border-primary"
-                />
-              </div>
-            </div>
-
-            <div className="px-6 py-4 border-t border-surface-border bg-surface-canvas/50 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setStatusAdmin(null)}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-surface-muted hover:text-surface-dark"
-              >
-                Cancel
-              </button>
-
-              <button
-                type="button"
-                disabled={isSavingStatus}
-                onClick={handleSaveStatus}
-                className="px-5 py-2 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold shadow-xs transition-all disabled:opacity-50"
-              >
-                {isSavingStatus ? 'Updating...' : 'Confirm Status Change'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Admin Lifecycle Dialog */}
+      <AdminLifecycleDialog
+        admin={lifecycleAdmin}
+        initialStatus={lifecycleInitialStatus}
+        onClose={() => setLifecycleAdmin(null)}
+        onSuccess={handleStatusUpdated}
+      />
     </div>
   );
 }

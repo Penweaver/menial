@@ -85,14 +85,14 @@ export class SuperadminService {
   }
 
   /**
-   * Superadmin-only: Creates a new Admin account in 'invited' status with initial permissions (§12, §70).
+   * Superadmin-only: Creates a new Admin account in 'invited' status with initial permissions (§12, §17, §70).
    */
   public async createAdminUser(params: {
     userId: string;
     permissions: AdminPermissionKey[];
     reason?: string;
-  }): Promise<{ adminId: string }> {
-    const { data, error } = await this.db.rpc<string>('create_admin_account', {
+  }): Promise<{ adminId: string; invitationToken?: string; invitationExpiresAt?: string }> {
+    const { data, error } = await this.db.rpc<unknown>('create_admin_account', {
       p_user_id: params.userId,
       p_permissions: params.permissions,
       p_reason: params.reason || 'Admin account created by Superadmin',
@@ -102,7 +102,16 @@ export class SuperadminService {
       throw new Error(`Failed to create admin user: ${error?.message || 'No ID returned'}`);
     }
 
-    return { adminId: data };
+    const record = Array.isArray(data) ? (data[0] as Record<string, unknown>) : (data as Record<string, unknown>);
+    const adminId = record?.admin_id || record?.adminId || (typeof data === 'string' ? data : '');
+    const invitationToken = record?.invitation_token || record?.invitationToken;
+    const invitationExpiresAt = record?.invitation_expires_at || record?.invitationExpiresAt;
+
+    return {
+      adminId: String(adminId),
+      invitationToken: invitationToken ? String(invitationToken) : undefined,
+      invitationExpiresAt: invitationExpiresAt ? String(invitationExpiresAt) : undefined,
+    };
   }
 
   /**
