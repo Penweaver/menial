@@ -26,7 +26,15 @@ import {
   EmergencyDistressDetails,
   EmergencySosDossier,
 } from '@shared/services/trust/TrustSafetyService';
-import type { InitializePaymentOptions, PaymentInitializationResult } from '@shared/services/payment/PaymentService';
+import type {
+  InitializePaymentOptions,
+  PaymentInitializationResult,
+  PaymentChannel,
+  VirtualAccountDetails,
+  UssdPaymentDetails,
+  CardPaymentDetails,
+} from '@shared/services/payment/PaymentService';
+import { NigerianPaymentRails } from '@shared/services/payment/PaymentService';
 import type { BankAccountDetails, PayoutDisbursementResult } from '@shared/services/payment/PayoutService';
 import type { DiscoveredWorker } from '@shared/services/profile/ProfileService';
 import type { IDatabaseClient } from '@shared/services/admin/AdminService';
@@ -1063,6 +1071,32 @@ export const ApiService = {
     }
 
     return result;
+  },
+
+  async submitCardOtp(
+    providerReference: string,
+    otp: string,
+    jobId?: string
+  ): Promise<{ success: boolean; error?: string }> {
+    const result = await paymentProvider.submitCardOtp(providerReference, otp);
+
+    if (result.success && jobId) {
+      const job = createdJobsStore.get(jobId);
+      if (job) {
+        job.status = 'payment_secured';
+        job.isEscrowFunded = true;
+        job.escrowReference = providerReference;
+        createdJobsStore.set(jobId, job);
+      }
+    }
+
+    return result;
+  },
+
+  async queryPaymentStatus(
+    providerReference: string
+  ): Promise<{ status: 'pending' | 'successful' | 'failed'; amountKobo: number }> {
+    return await paymentProvider.queryPaymentStatus(providerReference);
   },
 
   // Active Job Execution (§32, §45, §49)

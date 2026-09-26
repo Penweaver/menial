@@ -16,8 +16,10 @@ import type {
   PaymentInitializationResult,
   WebhookPayload,
   WebhookProcessingResult,
+  VirtualAccountDetails,
+  UssdPaymentDetails,
 } from './PaymentService';
-import { PaymentSignatureVerifier } from './PaymentService';
+import { PaymentSignatureVerifier, NigerianPaymentRails } from './PaymentService';
 
 interface StoredTransaction {
   reference: string;
@@ -26,6 +28,10 @@ interface StoredTransaction {
   status: 'pending' | 'successful' | 'failed' | 'refunded';
   createdAt: number;
   confirmedAt?: number;
+  channel?: string;
+  virtualAccount?: VirtualAccountDetails;
+  ussdDetails?: UssdPaymentDetails;
+  requires3DS?: boolean;
 }
 
 export class MockPaymentProvider implements IPaymentProvider {
@@ -46,6 +52,70 @@ export class MockPaymentProvider implements IPaymentProvider {
   ): Promise<PaymentInitializationResult> {
     const reference = `mock_ref_${options.publicJobId}_${Date.now()}`;
     const checkoutUrl = `https://checkout.menial.dev/pay?ref=${reference}&amt=${options.amountKobo}`;
+    const channel = options.channel || 'card';
+
+    let virtualAccount: VirtualAccountDetails | undefined;
+    let ussdDetails: UssdPaymentDetails | undefined;
+    let requires3DS = false;
+
+    // 1. Channel-specific validation and payload construction
+    if (channel === 'bank_transfer') {
+      // Generate dedicated dynamic NIP virtual bank account (§38)
+      // 10-digit NUBAN starting with 992 (Wema / Monnify dynamic prefix)
+      const randomSuffix = Math.floor(1000000 + Math.random() * 9000000).toString();
+      virtualAccount = {
+        bankName: 'Wema Bank / Providus',
+        accountNumber: `992${randomSuffix.slice(0, 7)}`,
+        accountName: `Menial Escrow / ${options.publicJobId}`,
+        expiresAt: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+      };
+    } else if (channel === 'ussd') {
+      const bankCode = options.selectedBankCode || '058';
+      const bank = NigerianPaymentRails.SUPPORTED_BANKS.find((b) => b.code === bankCode) || NigerianPaymentRails.SUPPORTED_BANKS[0];
+      const amountNaira = options.amountKobo / 100;
+      const ussdCode = NigerianPaymentRails.generateUssdCode(bankCode, amountNaira);
+      ussdDetails = {
+        bankCode: bank.code,
+        bankName: bank.name,
+        ussdCode,
+      };
+    } else if (channel === 'card' && options.cardDetails) {
+      const { cardNumber, expiryMonth, expiryYear, cvv } = options.cardDetails;
+      if (!NigerianPaymentRails.validateCardNumber(cardNumber)) {
+        return {
+          success: false,
+          paymentId: '',
+          providerReference: '',
+          checkoutUrl: '',
+          amountKobo: options.amountKobo,
+          currency: 'NGN',
+          error: 'Invalid debit card number. Please check card digits.',
+        };
+      }
+      if (!NigerianPaymentRails.validateCardExpiry(expiryMonth, expiryYear)) {
+        return {
+          success: false,
+          paymentId: '',
+          providerReference: '',
+          checkoutUrl: '',
+          amountKobo: options.amountKobo,
+          currency: 'NGN',
+          error: 'Card expiry date is invalid or has expired.',
+        };
+      }
+      if (!NigerianPaymentRails.validateCvv(cvv)) {
+        return {
+          success: false,
+          paymentId: '',
+          providerReference: '',
+          checkoutUrl: '',
+          amountKobo: options.amountKobo,
+          currency: 'NGN',
+          error: 'Invalid CVV security code (3 or 4 digits required).',
+        };
+      }
+      requires3DS = true;
+    }
 
     this.transactions.set(reference, {
       reference,
@@ -53,6 +123,10 @@ export class MockPaymentProvider implements IPaymentProvider {
       amountKobo: options.amountKobo,
       status: 'pending',
       createdAt: Date.now(),
+      channel,
+      virtualAccount,
+      ussdDetails,
+      requires3DS,
     });
 
     return {
@@ -62,6 +136,11 @@ export class MockPaymentProvider implements IPaymentProvider {
       checkoutUrl,
       amountKobo: options.amountKobo,
       currency: 'NGN',
+      channel,
+      virtualAccount,
+      ussdDetails,
+      requires3DS,
+      authUrl: requires3DS ? `https://checkout.paystack.com/3ds-challenge/${reference}` : undefined,
     };
   }
 
@@ -152,6 +231,59 @@ export class MockPaymentProvider implements IPaymentProvider {
     return {
       success: true,
       refundReference,
+    };
+  }
+
+  /**
+   * Submits card 3DS OTP challenge verification (§37, §39).
+   */
+  public async submitCardOtp(
+    providerReference: string,
+    otp: string
+  ): Promise<{ success: boolean; error?: string }> {
+    const tx = this.transactions.get(providerReference);
+    if (!tx) {
+      return {
+        success: false,
+        error: `Transaction reference ${providerReference} not found.`,
+      };
+    }
+
+    if (tx.status === 'successful') {
+      return { success: true };
+    }
+
+    const cleanOtp = otp.trim();
+    // In mock/sandbox mode, 123456 is standard test OTP. Any non-empty 6-digit except '000000' succeeds.
+    if (cleanOtp === '000000' || cleanOtp.length !== 6 || !/^\d+$/.test(cleanOtp)) {
+      return {
+        success: false,
+        error: 'Invalid or expired 3D Secure OTP. Transaction declined by issuer bank.',
+      };
+    }
+
+    tx.status = 'successful';
+    tx.confirmedAt = Date.now();
+    this.processedReferences.add(providerReference);
+
+    return {
+      success: true,
+    };
+  }
+
+  /**
+   * Queries payment status directly from payment provider (§38).
+   */
+  public async queryPaymentStatus(
+    providerReference: string
+  ): Promise<{ status: 'pending' | 'successful' | 'failed'; amountKobo: number }> {
+    const tx = this.transactions.get(providerReference);
+    if (!tx) {
+      return { status: 'failed', amountKobo: 0 };
+    }
+    return {
+      status: tx.status === 'refunded' ? 'successful' : tx.status,
+      amountKobo: tx.amountKobo,
     };
   }
 
