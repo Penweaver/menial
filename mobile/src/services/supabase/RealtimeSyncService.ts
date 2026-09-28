@@ -265,15 +265,14 @@ export class RealtimeSyncService {
   /**
    * Cleans up all active channels (e.g., on logout or app background).
    */
-  public static unsubscribeAll(): void {
+  public static async unsubscribeAll(): Promise<void> {
     const client = getMobileSupabaseClient();
-    this.activeChannels.forEach((channel) => {
-      try {
-        client.removeChannel(channel);
-      } catch {
-        // Ignore during batch cleanup
-      }
-    });
+    try {
+      await client.removeAllChannels();
+      client.realtime.disconnect();
+    } catch {
+      // Ignore during batch cleanup
+    }
     this.activeChannels.clear();
     this.fallbackListeners.clear();
   }

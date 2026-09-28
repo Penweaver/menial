@@ -13,6 +13,7 @@ import { WageEstimator } from '@/components/sections/WageEstimator'
 import { FAQ } from '@/components/sections/FAQ'
 import { FooterCTA } from '@/components/sections/FooterCTA'
 import { Footer } from '@/components/layout/Footer'
+import { MobileFloatingBar } from '@/components/ui/MobileFloatingBar'
 
 type LandingClientProps = {
   testimonials: TestimonialsData
@@ -21,7 +22,7 @@ type LandingClientProps = {
 
 /**
  * Client wrapper that owns the global persona toggle state
- * and passes it down to Navbar and Hero.
+ * and passes it down to Navbar, Hero, and MobileFloatingBar.
  */
 export function LandingClient({ testimonials, stats }: LandingClientProps) {
   const [persona, setPersona] = useState<'employer' | 'worker'>('employer')
@@ -40,6 +41,7 @@ export function LandingClient({ testimonials, stats }: LandingClientProps) {
         <FooterCTA />
       </main>
       <Footer />
+      <MobileFloatingBar persona={persona} onPersonaChange={setPersona} />
     </>
   )
 }

@@ -20,7 +20,7 @@ create table if not exists public.landing_testimonials (
   author_role   text not null check (char_length(author_role) between 2 and 120),
   rating        smallint not null default 5 check (rating between 1 and 5),
   -- Optional: link to real verified user (for future trust badge display)
-  user_id       uuid references public.users(id) on delete set null,
+  user_id       uuid references public.profiles(id) on delete set null,
   -- Admin controls
   active        boolean not null default true,
   sort_order    integer not null default 0,
@@ -88,48 +88,20 @@ create policy "landing_stats: public read active"
   to anon, authenticated
   using (active = true);
 
--- Admin write: operations_admin and superadmin can manage landing content
+-- Admin write: operations admin or superadmin can manage landing content
 create policy "landing_testimonials: admin manage"
   on public.landing_testimonials
   for all
   to authenticated
-  using (
-    exists (
-      select 1 from public.admin_users au
-      where au.id = auth.uid()
-        and au.is_active = true
-        and (au.is_superadmin = true or au.role in ('operations_admin'))
-    )
-  )
-  with check (
-    exists (
-      select 1 from public.admin_users au
-      where au.id = auth.uid()
-        and au.is_active = true
-        and (au.is_superadmin = true or au.role in ('operations_admin'))
-    )
-  );
+  using (public.has_admin_permission('operations'))
+  with check (public.has_admin_permission('operations'));
 
 create policy "landing_stats: admin manage"
   on public.landing_stats
   for all
   to authenticated
-  using (
-    exists (
-      select 1 from public.admin_users au
-      where au.id = auth.uid()
-        and au.is_active = true
-        and (au.is_superadmin = true or au.role in ('operations_admin'))
-    )
-  )
-  with check (
-    exists (
-      select 1 from public.admin_users au
-      where au.id = auth.uid()
-        and au.is_active = true
-        and (au.is_superadmin = true or au.role in ('operations_admin'))
-    )
-  );
+  using (public.has_admin_permission('operations'))
+  with check (public.has_admin_permission('operations'));
 
 -- ---------------------------------------------------------------------------
 -- SEED DATA: landing_stats

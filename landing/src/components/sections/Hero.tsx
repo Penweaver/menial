@@ -81,13 +81,13 @@ function PhoneMockup() {
       </svg>
 
       {/* Floating badge — workers online */}
-      <div className="absolute -left-8 top-24 bg-white rounded-xl shadow-lg border border-border px-3 py-2 flex items-center gap-2 text-xs font-semibold text-text-primary">
+      <div className="absolute -left-8 top-24 bg-white rounded-xl shadow-lg border border-border px-3 py-2 flex items-center gap-2 text-xs font-semibold text-text-primary animate-pop-in delay-300">
         <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse flex-shrink-0" />
         2,847 online
       </div>
 
       {/* Floating badge — instant pay */}
-      <div className="absolute -right-6 bottom-32 bg-white rounded-xl shadow-lg border border-border px-3 py-2 text-xs font-semibold text-text-primary">
+      <div className="absolute -right-6 bottom-32 bg-white rounded-xl shadow-lg border border-border px-3 py-2 text-xs font-semibold text-text-primary animate-pop-in delay-500">
         <span className="text-primary">₦</span> Instant Pay ⚡
       </div>
     </div>
@@ -118,16 +118,16 @@ export function Hero({ persona }: HeroProps) {
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28 w-full">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
 
-          {/* Left column — copy */}
+          {/* Left column — copy with staggered entrance */}
           <div className="flex flex-col items-start">
-            {/* Live badge */}
-            <div className="animate-pulse-ring mb-6 inline-flex items-center gap-2 rounded-full bg-white border border-border px-4 py-2 text-sm font-medium text-text-primary shadow-sm">
+            {/* Live badge — pops in first */}
+            <div className="animate-fade-in-up animate-pulse-ring mb-6 inline-flex items-center gap-2 rounded-full bg-white border border-border px-4 py-2 text-sm font-medium text-text-primary shadow-sm">
               <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse flex-shrink-0" aria-hidden="true" />
               {heroContent.badge}
             </div>
 
-            {/* Headline */}
-            <h1 className="text-5xl lg:text-7xl font-extrabold leading-[1.05] tracking-tight text-text-primary mb-6">
+            {/* Headline — slight delay */}
+            <h1 className="animate-fade-in-up delay-100 text-5xl lg:text-7xl font-extrabold leading-[1.05] tracking-tight text-text-primary mb-6">
               {heroContent.headlineStart}{' '}
               <span className="gradient-text">{heroContent.headlineGradient}</span>
               <br />
@@ -135,28 +135,28 @@ export function Hero({ persona }: HeroProps) {
             </h1>
 
             {/* Subheadline */}
-            <p className="text-base sm:text-lg text-text-secondary leading-relaxed max-w-xl mb-8">
+            <p className="animate-fade-in-up delay-200 text-base sm:text-lg text-text-secondary leading-relaxed max-w-xl mb-8">
               {heroContent.subheadline}
             </p>
 
-            {/* CTA buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto mb-10">
+            {/* CTA buttons — full-width on mobile, press feedback */}
+            <div className="animate-fade-in-up delay-300 flex flex-col sm:flex-row gap-3 w-full sm:w-auto mb-10">
               <a
                 href={primaryHref}
-                className="btn-shimmer flex items-center justify-center h-[52px] px-7 rounded-[12px] bg-primary hover:bg-primary-hover text-white text-base font-semibold transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 w-full sm:w-auto"
+                className="btn-shimmer btn-press tap-highlight-none flex items-center justify-center h-[52px] px-7 rounded-[12px] bg-primary hover:bg-primary-hover text-white text-base font-semibold transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 w-full sm:w-auto"
               >
                 {primaryCTA}
               </a>
               <a
                 href="#how-it-works"
-                className="flex items-center justify-center h-[52px] px-7 rounded-[12px] border-[1.5px] border-primary text-primary text-base font-semibold bg-white hover:bg-primary-container transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 w-full sm:w-auto"
+                className="btn-press tap-highlight-none flex items-center justify-center h-[52px] px-7 rounded-[12px] border-[1.5px] border-primary text-primary text-base font-semibold bg-white hover:bg-primary-container transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 w-full sm:w-auto"
               >
                 {heroContent.secondaryCTA}
               </a>
             </div>
 
-            {/* Live stats pills */}
-            <div className="flex flex-wrap gap-3">
+            {/* Live stats pills — staggered pop-in */}
+            <div className="animate-stagger flex flex-wrap gap-3">
               {heroContent.liveStats.map((stat) => (
                 <div
                   key={stat.label}
@@ -172,9 +172,10 @@ export function Hero({ persona }: HeroProps) {
             </div>
           </div>
 
-          {/* Right column — phone mockup */}
-          <div className="flex justify-center lg:justify-end">
-            <div className="relative">
+          {/* Right column — floating phone mockup */}
+          <div className="flex justify-center lg:justify-end animate-fade-in-up delay-200">
+            {/* animate-float: gentle continuous levitation */}
+            <div className="relative animate-float">
               <PhoneMockup />
             </div>
           </div>

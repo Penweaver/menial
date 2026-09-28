@@ -97,79 +97,6 @@ CREATE TYPE actor_party_type AS ENUM ('employer', 'worker');
 
 
 -- ---------------------------------------------------------------------------
--- 2. HELPER FUNCTIONS (SECURITY DEFINER)
--- ---------------------------------------------------------------------------
--- These functions run with the privileges of the function creator (service role)
--- and are used inside RLS policies so marketplace users cannot tamper with
--- role lookups. §18, §73: "Do not trust role information supplied by the client."
--- ---------------------------------------------------------------------------
-
--- Check if current auth user has an active admin_users row
-CREATE OR REPLACE FUNCTION public.is_admin()
-RETURNS boolean
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM public.admin_users
-    WHERE user_id = auth.uid()
-      AND status = 'active'
-  );
-$$;
-
--- Check if current auth user is the active Superadmin
-CREATE OR REPLACE FUNCTION public.is_superadmin()
-RETURNS boolean
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM public.admin_users
-    WHERE user_id = auth.uid()
-      AND is_superadmin = true
-      AND status = 'active'
-  );
-$$;
-
--- Check if current auth user holds a specific admin permission
-CREATE OR REPLACE FUNCTION public.has_admin_permission(required_permission admin_permission_key)
-RETURNS boolean
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT EXISTS (
-    SELECT 1
-    FROM public.admin_users au
-    JOIN public.admin_user_permissions aup ON aup.admin_user_id = au.id
-    JOIN public.admin_permissions ap ON ap.id = aup.permission_id
-    WHERE au.user_id = auth.uid()
-      AND au.status = 'active'
-      AND ap.permission_key = required_permission
-  )
-  OR public.is_superadmin();  -- Superadmin implicitly has all permissions
-$$;
-
--- Get the account_type of the current marketplace user
-CREATE OR REPLACE FUNCTION public.get_user_account_type()
-RETURNS user_account_type
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT account_type FROM public.profiles
-  WHERE id = auth.uid()
-  LIMIT 1;
-$$;
-
-
--- ---------------------------------------------------------------------------
 -- 3A. CORE USER TABLES
 -- ---------------------------------------------------------------------------
 
@@ -370,7 +297,7 @@ CREATE INDEX idx_jobs_category ON public.jobs (category_id);
 CREATE INDEX idx_jobs_status ON public.jobs (status);
 CREATE INDEX idx_jobs_scheduled ON public.jobs (scheduled_date, start_time);
 CREATE INDEX idx_jobs_location ON public.jobs USING gist (
-  ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)::geography
+  (ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)::geography)
 ) WHERE latitude IS NOT NULL AND longitude IS NOT NULL;
 
 COMMENT ON COLUMN public.jobs.worker_pay IS 'Per-worker pay amount in kobo. §29: "proposed pay is a per-worker amount"';
@@ -749,6 +676,79 @@ CREATE TRIGGER set_updated_at BEFORE UPDATE ON public.safety_reports
   FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 CREATE TRIGGER set_updated_at BEFORE UPDATE ON public.platform_settings
   FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+
+-- ---------------------------------------------------------------------------
+-- 4B. HELPER FUNCTIONS (SECURITY DEFINER)
+-- ---------------------------------------------------------------------------
+-- These functions run with the privileges of the function creator (service role)
+-- and are used inside RLS policies so marketplace users cannot tamper with
+-- role lookups. §18, §73: "Do not trust role information supplied by the client."
+-- ---------------------------------------------------------------------------
+
+-- Check if current auth user has an active admin_users row
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.admin_users
+    WHERE user_id = auth.uid()
+      AND status = 'active'
+  );
+$$;
+
+-- Check if current auth user is the active Superadmin
+CREATE OR REPLACE FUNCTION public.is_superadmin()
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.admin_users
+    WHERE user_id = auth.uid()
+      AND is_superadmin = true
+      AND status = 'active'
+  );
+$$;
+
+-- Check if current auth user holds a specific admin permission
+CREATE OR REPLACE FUNCTION public.has_admin_permission(required_permission admin_permission_key)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.admin_users au
+    JOIN public.admin_user_permissions aup ON aup.admin_user_id = au.id
+    JOIN public.admin_permissions ap ON ap.id = aup.permission_id
+    WHERE au.user_id = auth.uid()
+      AND au.status = 'active'
+      AND ap.permission_key = required_permission
+  )
+  OR public.is_superadmin();  -- Superadmin implicitly has all permissions
+$$;
+
+-- Get the account_type of the current marketplace user
+CREATE OR REPLACE FUNCTION public.get_user_account_type()
+RETURNS user_account_type
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT account_type FROM public.profiles
+  WHERE id = auth.uid()
+  LIMIT 1;
+$$;
 
 
 -- ---------------------------------------------------------------------------

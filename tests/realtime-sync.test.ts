@@ -234,7 +234,7 @@ async function runRealtimeSyncTests() {
   console.log('   🎉 ALL PILLAR 2 REALTIME & SYNC TESTS PASSED (100%)');
   console.log('=============================================================\n');
 
-  RealtimeSyncService.unsubscribeAll();
+  await RealtimeSyncService.unsubscribeAll();
 }
 
 runRealtimeSyncTests()

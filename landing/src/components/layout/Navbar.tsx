@@ -54,10 +54,14 @@ export function Navbar({ persona, onPersonaChange }: NavbarProps) {
           {/* Logo */}
           <a
             href="/"
-            className="text-xl font-extrabold text-primary tracking-tight flex-shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm"
+            className="flex items-center gap-2 flex-shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm"
             aria-label="menial — home"
           >
-            menial
+            <img
+              src="/logo.png"
+              alt="menial"
+              className="h-8 w-auto object-contain"
+            />
           </a>
 
           {/* Desktop centre links */}
@@ -111,7 +115,7 @@ export function Navbar({ persona, onPersonaChange }: NavbarProps) {
       >
         {/* Drawer header */}
         <div className="flex items-center justify-between px-4 h-16 border-b border-border">
-          <span className="text-xl font-extrabold text-primary tracking-tight">menial</span>
+          <img src="/logo.png" alt="menial" className="h-7 w-auto object-contain" />
           <button
             onClick={() => setMenuOpen(false)}
             aria-label="Close navigation menu"

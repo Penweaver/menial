@@ -36,6 +36,8 @@ COMMENT ON COLUMN public.admin_users.invitation_expires_at IS
 -- ---------------------------------------------------------------------------
 -- 3. UPDATE CREATE_ADMIN_ACCOUNT TO ISSUE 72-HOUR EXPIRES TOKEN
 -- ---------------------------------------------------------------------------
+DROP FUNCTION IF EXISTS public.create_admin_account(uuid, public.admin_permission_key[], text);
+
 CREATE OR REPLACE FUNCTION public.create_admin_account(
   p_user_id uuid,
   p_permissions public.admin_permission_key[],
