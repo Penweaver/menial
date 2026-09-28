@@ -9,6 +9,14 @@
 
 import type { IDatabaseClient } from '../admin/AdminService';
 import type { AdminPermissionKey, AdminStatus } from '../../types/enums';
+import type {
+  IntegrationCategory,
+  IntegrationEnvironment,
+  IntegrationProviderConfig,
+  ConnectionTestResult,
+  TestConnectionParams,
+} from '../../integrations/types';
+import { ProviderManager } from '../../integrations/ProviderManager';
 
 export interface AdminAccountSummary {
   id: string;
@@ -196,5 +204,68 @@ export class SuperadminService {
     }
 
     return data;
+  }
+
+  /**
+   * Superadmin-only: Lists all integration providers with masked credentials.
+   */
+  public async getIntegrationProviders(): Promise<IntegrationProviderConfig[]> {
+    const { data, error } = await this.db.rpc<any[]>(
+      'get_superadmin_integration_providers'
+    );
+
+    if (error || !data) {
+      throw new Error(`Failed to fetch integration providers: ${error?.message || 'No data'}`);
+    }
+
+    return data.map((row) => ({
+      id: row.id,
+      category: row.category,
+      providerId: row.provider_id,
+      providerName: row.provider_name,
+      isActive: row.is_active,
+      environment: row.environment,
+      config: row.config || {},
+      maskedSecrets: row.masked_secrets || {},
+      updatedAt: row.updated_at,
+      updatedByName: row.updated_by_name,
+    }));
+  }
+
+  /**
+   * Superadmin-only: Updates provider configuration and hot-swaps active provider (§66, §67).
+   */
+  public async updateIntegrationProvider(params: {
+    category: IntegrationCategory;
+    providerId: string;
+    isActive: boolean;
+    environment: IntegrationEnvironment;
+    config: Record<string, unknown>;
+    secrets: Record<string, string>;
+    reason: string;
+  }): Promise<void> {
+    const { error } = await this.db.rpc('update_superadmin_integration_provider', {
+      p_category: params.category,
+      p_provider_id: params.providerId,
+      p_is_active: params.isActive,
+      p_environment: params.environment,
+      p_config: params.config,
+      p_secrets: params.secrets,
+      p_reason: params.reason,
+    });
+
+    if (error) {
+      throw new Error(`Failed to update integration provider: ${error.message}`);
+    }
+  }
+
+  /**
+   * Tests connection to an external provider on-the-fly without saving.
+   */
+  public async testIntegrationConnection(
+    params: TestConnectionParams
+  ): Promise<ConnectionTestResult> {
+    const manager = new ProviderManager(this.db);
+    return manager.testConnection(params);
   }
 }

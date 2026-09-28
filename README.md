@@ -69,6 +69,7 @@ ONE SUPERADMIN (§11, §20)
 
 - **Superadmin Uniqueness (§20):** Enforced via partial unique index `idx_unique_superadmin ON admin_users (is_superadmin) WHERE is_superadmin = true`. The system strictly blocks creating a second Superadmin or deleting/demoting the Superadmin.
 - **Mandatory MFA (§23):** Required for Superadmin and Finance Admin before accessing privileged endpoints.
+- **Dynamic Provider Switchboard (/superadmin/integrations):** Enables the Superadmin to hot-swap live Payment gateways (Paystack, Flutterwave, Monnify, Mock), SMS routers (Termii, Twilio, Africa's Talking, Mock), and Identity/KYC providers (Prembly, Dojah, Mock) directly from the dashboard without code changes or redeployments. Includes pre-flight credential ping validation ("Test Connection"), NDPA-compliant secret masking, and mandatory security audit logging (§66, §67).
 
 ---
 

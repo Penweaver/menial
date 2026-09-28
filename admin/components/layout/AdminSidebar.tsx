@@ -21,6 +21,7 @@ import {
   Shield,
   Settings,
   Activity,
+  Cpu,
   Lock,
   LockOpen,
   ChevronRight,
@@ -128,6 +129,14 @@ export function AdminSidebar() {
           name: 'Platform Settings',
           href: '/superadmin/settings',
           icon: Settings,
+          requiresMfaStepUp: true,
+        },
+        {
+          name: 'Provider Switchboard',
+          href: '/superadmin/integrations',
+          icon: Cpu,
+          badge: 'Live',
+          badgeVariant: 'success',
           requiresMfaStepUp: true,
         },
         {
