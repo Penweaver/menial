@@ -49,6 +49,7 @@ import type {
 } from '@shared/services/verification/VerificationService';
 import { VerificationService } from '@shared/services/verification/VerificationService';
 import type { CategorySafetyConfig } from '@shared/services/job/JobService';
+import { getMobileSupabaseClient } from './supabase/client';
 
 // Singletons for mobile service layer
 export const smsProvider = new MockSmsProvider({ enableDevLogging: true });
@@ -769,6 +770,66 @@ export const SEED_CATEGORIES: ServiceCategory[] = [
     maxPayKobo: null,
     suggestedRateKobo: 450000, // ₦4,500
   },
+  {
+    id: 'cat_construction',
+    name: 'Construction Labour',
+    description: 'Construction site assistance, brick carrying, site prep, and general building labour',
+    icon: '🏗️',
+    verificationTier: 'standard',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 500000, // ₦5,000
+  },
+  {
+    id: 'cat_domestic_help',
+    name: 'Domestic Help',
+    description: 'Household chores, cooking assistance, dishwashing, and home organization',
+    icon: '🏡',
+    verificationTier: 'standard',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 350000, // ₦3,500
+  },
+  {
+    id: 'cat_loading',
+    name: 'Loading & Offloading',
+    description: 'Truck loading, shipping container offloading, and warehouse freight handling',
+    icon: '🚛',
+    verificationTier: 'standard',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 450000, // ₦4,500
+  },
+  {
+    id: 'cat_general_labour',
+    name: 'General Labour',
+    description: 'Miscellaneous manual labour, clearing, shifting, and site helper services',
+    icon: '💪',
+    verificationTier: 'standard',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 400000, // ₦4,000
+  },
+  {
+    id: 'cat_packing',
+    name: 'Packing & Unpacking',
+    description: 'Household goods packing, fragile box wrapping, and room-by-room unpacking',
+    icon: '📦',
+    verificationTier: 'standard',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 400000, // ₦4,000
+  },
+  {
+    id: 'cat_other',
+    name: 'Other Manual Services',
+    description: 'Manual and artisan tasks not categorized under specific listings',
+    icon: '🛠️',
+    verificationTier: 'standard',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 400000, // ₦4,000
+  },
 
   // --- Care Tier (5 Categories) ---
   {
@@ -884,6 +945,9 @@ export const SEED_CATEGORIES: ServiceCategory[] = [
     suggestedRateKobo: 900000, // ₦9,000
   },
 ];
+
+// Active categories cache initialized from SEED_CATEGORIES and updated live via fetchCategories() (§26)
+let activeCategoriesCache: ServiceCategory[] = [...SEED_CATEGORIES];
 
 // Seed Workers for Proximity Discovery (§28, §34) & Stitch Visual Fidelity
 export interface MarketplaceWorker {
@@ -1118,8 +1182,46 @@ export const ApiService = {
     return workerProfilesStore.get('current_worker');
   },
 
+  /**
+   * Fetches active service categories live from the database (§26).
+   * Falls back to activeCategoriesCache if offline or in simulated test environment (§51).
+   */
+  async fetchCategories(): Promise<ServiceCategory[]> {
+    try {
+      const supabase = getMobileSupabaseClient();
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('is_active', true)
+        .order('display_order', { ascending: true });
+
+      if (error || !data || data.length === 0) {
+        return activeCategoriesCache;
+      }
+
+      // Map snake_case DB columns to ServiceCategory interface (§26)
+      const mapped: ServiceCategory[] = data.map((row: any) => ({
+        id: row.id,
+        name: row.name,
+        description: row.description || '',
+        icon: row.icon || '🛠️',
+        verificationTier: (row.verification_tier as VerificationTier) || 'standard',
+        minPayKobo: row.min_pay_kobo != null ? Number(row.min_pay_kobo) : null,
+        maxPayKobo: row.max_pay_kobo != null ? Number(row.max_pay_kobo) : null,
+        suggestedRateKobo: row.suggested_rate_kobo != null
+          ? Number(row.suggested_rate_kobo)
+          : (row.min_pay_kobo != null ? Number(row.min_pay_kobo) : 350000),
+      }));
+
+      activeCategoriesCache = mapped;
+      return mapped;
+    } catch {
+      return activeCategoriesCache;
+    }
+  },
+
   getCategories(): ServiceCategory[] {
-    return SEED_CATEGORIES;
+    return activeCategoriesCache;
   },
 
   // Worker Identity Verification (§22, §25, §80)
@@ -1213,9 +1315,15 @@ export const ApiService = {
   },
 
   recordSafetyCheckIn(jobId: string, status: 'safe' | 'distress'): { success: boolean; timestamp: string } {
+    const timestamp = new Date().toISOString();
+    const job = createdJobsStore.get(jobId);
+    if (job) {
+      job.lastCareCheckInAt = timestamp;
+      createdJobsStore.set(jobId, job);
+    }
     return {
       success: true,
-      timestamp: new Date().toISOString(),
+      timestamp,
     };
   },
 

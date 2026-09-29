@@ -8,6 +8,7 @@ import {
   Alert,
   Image,
   TextInput,
+  AppState,
 } from 'react-native';
 import { COLORS, SPACING, RADIUS, TYPOGRAPHY, formatKoboToNaira } from '../../../constants/theme';
 import { Card } from '../../../components/common/Card';
@@ -41,8 +42,23 @@ export const WorkerActiveJobScreen: React.FC = () => {
     job?.categoryId === 'cat_elderly_care' ||
     job?.categoryId === 'cat_special_needs';
 
-  const CHECK_IN_INTERVAL_SECONDS = 3 * 3600; // 3 hours = 10,800 seconds (§B.2)
-  const [lastCheckInSeconds, setLastCheckInSeconds] = useState<number>(0);
+  const CHECK_IN_INTERVAL_MS = 3 * 3600 * 1000; // 3 hours in ms = 10,800,000 ms (§B.2)
+
+  // Wall-clock reference timestamps (robust to phone backgrounding, pocket carry & sleep)
+  const jobStartTimeMs = React.useMemo(() => {
+    if (job?.startedWorkAt) {
+      return new Date(job.startedWorkAt).getTime();
+    }
+    // Default reference: initialize to current time minus simulated work duration
+    return Date.now() - 3640 * 1000;
+  }, [job?.startedWorkAt]);
+
+  const [lastCheckInTimestampMs, setLastCheckInTimestampMs] = useState<number>(() => {
+    if (job?.lastCareCheckInAt) {
+      return new Date(job.lastCareCheckInAt).getTime();
+    }
+    return jobStartTimeMs;
+  });
   const [showCareCheckInModal, setShowCareCheckInModal] = useState<boolean>(false);
 
   // Offline sync listener & mutation handlers (§51)
@@ -110,36 +126,59 @@ export const WorkerActiveJobScreen: React.FC = () => {
     return () => clearInterval(beaconInterval);
   }, [job?.status, job?.id]);
 
-  // Active work stopwatch timer & 3-hour Care check-in prompt trigger (§B.2)
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (job?.status === 'in_progress') {
-      interval = setInterval(() => {
-        setWorkSeconds((prev) => {
-          const next = prev + 1;
-          // Trigger 3-hour check-in prompt if Care tier and threshold elapsed
-          if (
-            isCareTier &&
-            next > 0 &&
-            next - lastCheckInSeconds >= CHECK_IN_INTERVAL_SECONDS &&
-            !showCareCheckInModal
-          ) {
-            setShowCareCheckInModal(true);
-            NotificationService.sendLocalNotification({
-              title: '3-Hour Care Check-In Required (§B.2)',
-              body: 'Please confirm you are safe and continuing duty on this care engagement.',
-            });
-          }
-          return next;
+  // Wall-clock check-in evaluator (immune to OS timer throttling when in pocket/backgrounded)
+  const evaluateCareCheckIn = React.useCallback(
+    (currentTimestampMs: number = Date.now()) => {
+      if (!isCareTier || job?.status !== 'in_progress') return;
+      const elapsedSinceCheckIn = currentTimestampMs - lastCheckInTimestampMs;
+      if (elapsedSinceCheckIn >= CHECK_IN_INTERVAL_MS && !showCareCheckInModal) {
+        setShowCareCheckInModal(true);
+        NotificationService.sendLocalNotification({
+          title: '3-Hour Care Check-In Required (§B.2)',
+          body: 'Mandatory safety check-in: 3 hours have elapsed. Please confirm you are safe and continuing duty on this care engagement.',
         });
-      }, 1000);
-    }
+      }
+    },
+    [isCareTier, job?.status, lastCheckInTimestampMs, showCareCheckInModal, CHECK_IN_INTERVAL_MS]
+  );
+
+  // Active work stopwatch & interval ticker (wall-clock timestamp comparison)
+  useEffect(() => {
+    if (job?.status !== 'in_progress') return;
+
+    // Immediate check upon mount or status change
+    evaluateCareCheckIn(Date.now());
+
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const elapsedSecs = Math.max(0, Math.floor((now - jobStartTimeMs) / 1000));
+      setWorkSeconds(elapsedSecs);
+      evaluateCareCheckIn(now);
+    }, 1000);
+
     return () => clearInterval(interval);
-  }, [job?.status, isCareTier, lastCheckInSeconds, showCareCheckInModal]);
+  }, [job?.status, jobStartTimeMs, evaluateCareCheckIn]);
+
+  // AppState listener: catches background-to-foreground transitions (e.g. phone taken out of pocket)
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'active') {
+        const now = Date.now();
+        const elapsedSecs = Math.max(0, Math.floor((now - jobStartTimeMs) / 1000));
+        setWorkSeconds(elapsedSecs);
+        evaluateCareCheckIn(now);
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [jobStartTimeMs, evaluateCareCheckIn]);
 
   const handleConfirmSafeCheckIn = () => {
+    const now = Date.now();
     ApiService.recordSafetyCheckIn(job.id, 'safe');
-    setLastCheckInSeconds(workSeconds);
+    setLastCheckInTimestampMs(now);
     setShowCareCheckInModal(false);
     Alert.alert('Check-In Confirmed', 'Your safe status has been logged and communicated to Trust & Safety (§B.2).');
   };

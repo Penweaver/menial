@@ -82,7 +82,20 @@ export const WorkerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const { session } = useAuth();
   const userId = session?.userId || 'anonymous_worker';
 
-  const [categories] = useState<ServiceCategory[]>(() => ApiService.getCategories());
+  const [categories, setCategories] = useState<ServiceCategory[]>(() => ApiService.getCategories());
+
+  useEffect(() => {
+    let isMounted = true;
+    ApiService.fetchCategories().then((cats) => {
+      if (isMounted && cats && cats.length > 0) {
+        setCategories(cats);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const [profile, setProfile] = useState<WorkerProfileState>({
     bio: '',
     indicativeRateKobo: 350000, // Default ₦3,500

@@ -62,11 +62,16 @@ export const JobCreationProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [draft, setDraft] = useState<JobDraft>(defaultDraft);
   const [platformFeePercent, setPlatformFeePercent] = useState<number>(10.0);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const categories = useMemo(() => ApiService.getCategories(), []);
+  const [categories, setCategories] = useState<ServiceCategory[]>(() => ApiService.getCategories());
 
-  // Fetch live configurable platform fee from platform settings
+  // Fetch live database categories (§26) and configurable platform fee
   useEffect(() => {
     let isMounted = true;
+    ApiService.fetchCategories().then((cats) => {
+      if (isMounted && cats && cats.length > 0) {
+        setCategories(cats);
+      }
+    });
     ApiService.getPlatformFeePercentage().then((fee) => {
       if (isMounted) setPlatformFeePercent(fee);
     });

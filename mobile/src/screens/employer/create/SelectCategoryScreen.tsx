@@ -53,7 +53,7 @@ export const SelectCategoryScreen: React.FC<SelectCategoryScreenProps> = ({
         <View style={styles.header}>
           <Text style={styles.title}>What service do you need?</Text>
           <Text style={styles.subtitle}>
-            Choose from 26 verified manual and artisan trades. Enhanced categories require verified credentials.
+            Choose from {categories.length} verified manual and artisan trades. Enhanced categories require verified credentials.
           </Text>
         </View>
 
@@ -66,7 +66,13 @@ export const SelectCategoryScreen: React.FC<SelectCategoryScreenProps> = ({
               onPress={() => setFilterTier(tier)}
             >
               <Text style={[styles.filterPillText, filterTier === tier && styles.filterPillTextActive]}>
-                {tier === 'all' ? 'All (26)' : tier === 'standard' ? 'Standard' : tier === 'care' ? 'Care Tier' : 'Technical'}
+                {tier === 'all'
+                  ? `All (${categories.length})`
+                  : tier === 'standard'
+                  ? 'Standard'
+                  : tier === 'care'
+                  ? 'Care Tier'
+                  : 'Technical'}
               </Text>
             </TouchableOpacity>
           ))}
