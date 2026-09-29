@@ -16,12 +16,28 @@ export const SelectCategoryScreen: React.FC<SelectCategoryScreenProps> = ({
 }) => {
   const { draft, updateDraft, categories } = useJobCreation();
 
+  const [filterTier, setFilterTier] = React.useState<'all' | 'standard' | 'care' | 'technical'>('all');
+
+  const filteredCategories = React.useMemo(() => {
+    if (filterTier === 'all') return categories;
+    if (filterTier === 'technical') {
+      return categories.filter(
+        (c) => c.verificationTier === 'technical_trade' || (c.verificationTier as string) === 'technical'
+      );
+    }
+    return categories.filter((c) => c.verificationTier === filterTier);
+  }, [categories, filterTier]);
+
   const handleSelect = (cat: typeof categories[0]) => {
     updateDraft({
       categoryId: cat.id,
       categoryName: cat.name,
       categoryIcon: cat.icon,
       workerPayKobo: cat.suggestedRateKobo,
+      categoryTier: cat.verificationTier,
+      minPayKobo: cat.minPayKobo ?? null,
+      maxPayKobo: cat.maxPayKobo ?? null,
+      aboveCategoryCeiling: false,
     });
   };
 
@@ -37,13 +53,32 @@ export const SelectCategoryScreen: React.FC<SelectCategoryScreenProps> = ({
         <View style={styles.header}>
           <Text style={styles.title}>What service do you need?</Text>
           <Text style={styles.subtitle}>
-            Choose the category of manual or artisan work required for your task.
+            Choose from 26 verified manual and artisan trades. Enhanced categories require verified credentials.
           </Text>
         </View>
 
+        {/* Filter Tier Tabs */}
+        <View style={styles.filterRow}>
+          {(['all', 'standard', 'care', 'technical'] as const).map((tier) => (
+            <TouchableOpacity
+              key={tier}
+              style={[styles.filterPill, filterTier === tier && styles.filterPillActive]}
+              onPress={() => setFilterTier(tier)}
+            >
+              <Text style={[styles.filterPillText, filterTier === tier && styles.filterPillTextActive]}>
+                {tier === 'all' ? 'All (26)' : tier === 'standard' ? 'Standard' : tier === 'care' ? 'Care Tier' : 'Technical'}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
         <View style={styles.grid}>
-          {categories.map((cat) => {
+          {filteredCategories.map((cat) => {
             const isSelected = draft.categoryId === cat.id;
+            const isCare = cat.verificationTier === 'care';
+            const isTechnical =
+              cat.verificationTier === 'technical_trade' || (cat.verificationTier as string) === 'technical';
+
             return (
               <TouchableOpacity
                 key={cat.id}
@@ -60,14 +95,18 @@ export const SelectCategoryScreen: React.FC<SelectCategoryScreenProps> = ({
                   <Text style={styles.categoryIcon}>{cat.icon}</Text>
                 </View>
                 <View style={styles.textGroup}>
-                  <Text
-                    style={[
-                      styles.categoryName,
-                      isSelected && styles.categoryNameSelected,
-                    ]}
-                  >
-                    {cat.name}
-                  </Text>
+                  <View style={styles.titleRow}>
+                    <Text
+                      style={[
+                        styles.categoryName,
+                        isSelected && styles.categoryNameSelected,
+                      ]}
+                    >
+                      {cat.name}
+                    </Text>
+                    {isCare && <Text style={styles.tierBadgeCare}>Care Tier</Text>}
+                    {isTechnical && <Text style={styles.tierBadgeTech}>Technical</Text>}
+                  </View>
                   <Text style={styles.categoryDescription} numberOfLines={2}>
                     {cat.description}
                   </Text>
@@ -178,5 +217,58 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     marginTop: Spacing.xs,
+  },
+  filterRow: {
+    flexDirection: 'row',
+    gap: Spacing.xs,
+    marginBottom: Spacing.md,
+  },
+  filterPill: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 7,
+    borderRadius: Radii.full,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surfaceSubtle,
+  },
+  filterPillActive: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  filterPillText: {
+    ...Typography.scale.labelSm,
+    color: Colors.textSecondary,
+    fontWeight: '600',
+  },
+  filterPillTextActive: {
+    color: Colors.primaryOn,
+    fontWeight: '700',
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexWrap: 'wrap',
+    marginBottom: 2,
+  },
+  tierBadgeCare: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: Colors.secondary,
+    backgroundColor: Colors.secondaryContainer,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: Radii.sm,
+    overflow: 'hidden',
+  },
+  tierBadgeTech: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: Colors.tertiary,
+    backgroundColor: Colors.tertiaryContainer,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: Radii.sm,
+    overflow: 'hidden',
   },
 });

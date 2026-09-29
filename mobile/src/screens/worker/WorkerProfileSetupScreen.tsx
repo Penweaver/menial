@@ -14,6 +14,7 @@ import { Button } from '../../components/common/Button';
 import { Badge } from '../../components/common/Badge';
 import { Card } from '../../components/common/Card';
 import { useWorker } from '../../context/WorkerContext';
+import type { EmergencyContact } from '@shared/services/trust/TrustSafetyService';
 
 interface WorkerProfileSetupScreenProps {
   onComplete?: () => void;
@@ -27,18 +28,51 @@ export const WorkerProfileSetupScreen: React.FC<WorkerProfileSetupScreenProps> =
   const { profile, categories, saveProfile, isLoading } = useWorker();
 
   const [bio, setBio] = useState(profile.bio);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>(profile.categoryIds);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(profile.categoryIds || []);
+  const [categoryRatesNaira, setCategoryRatesNaira] = useState<Record<string, string>>(() => {
+    const initial: Record<string, string> = {};
+    if (profile.categoryRates) {
+      for (const [catId, kobo] of Object.entries(profile.categoryRates)) {
+        initial[catId] = String(Math.floor(kobo / 100));
+      }
+    }
+    return initial;
+  });
   const [rateNaira, setRateNaira] = useState(
     profile.indicativeRateKobo ? String(Math.floor(profile.indicativeRateKobo / 100)) : '3500'
   );
   const [rateUnit, setRateUnit] = useState<'hour' | 'day'>('hour');
   const [serviceRadius, setServiceRadius] = useState<number>(profile.serviceRadiusKm || 15);
+  
+  // Emergency contact state (§L)
+  const [emergencyName, setEmergencyName] = useState(profile.emergencyContact?.name || '');
+  const [emergencyPhone, setEmergencyPhone] = useState(profile.emergencyContact?.phone || '');
+  const [emergencyRelationship, setEmergencyRelationship] = useState(profile.emergencyContact?.relationship || 'Spouse');
+  
   const [error, setError] = useState<string | null>(null);
 
+  const MAX_CATEGORIES = 5;
+
   const toggleCategory = (catId: string) => {
-    setSelectedCategories((prev) =>
-      prev.includes(catId) ? prev.filter((id) => id !== catId) : [...prev, catId]
-    );
+    setError(null);
+    if (selectedCategories.includes(catId)) {
+      setSelectedCategories((prev) => prev.filter((id) => id !== catId));
+    } else {
+      if (selectedCategories.length >= MAX_CATEGORIES) {
+        Alert.alert(
+          'Category Limit Reached',
+          `You can select a maximum of ${MAX_CATEGORIES} categories per worker profile (§I). Deselect an existing category first.`
+        );
+        setError(`Category limit reached: Maximum ${MAX_CATEGORIES} categories allowed (§I).`);
+        return;
+      }
+      setSelectedCategories((prev) => [...prev, catId]);
+    }
+  };
+
+  const handleCategoryRateChange = (catId: string, val: string) => {
+    const clean = val.replace(/\D/g, '');
+    setCategoryRatesNaira((prev) => ({ ...prev, [catId]: clean }));
   };
 
   const handleSave = async () => {
@@ -53,20 +87,57 @@ export const WorkerProfileSetupScreen: React.FC<WorkerProfileSetupScreenProps> =
       return;
     }
 
+    if (selectedCategories.length > MAX_CATEGORIES) {
+      setError(`Maximum ${MAX_CATEGORIES} categories allowed (§I).`);
+      return;
+    }
+
     const parsedRateNaira = parseInt(rateNaira.replace(/\D/g, ''), 10);
     if (isNaN(parsedRateNaira) || parsedRateNaira < 500) {
-      setError('Please enter a valid indicative wage (minimum ₦500).');
+      setError('Please enter a valid baseline indicative wage (minimum ₦500).');
+      return;
+    }
+
+    // Validate emergency contact details (§L)
+    if (!emergencyName.trim()) {
+      setError('Emergency contact name is required for safety protocols (§L).');
+      return;
+    }
+    const cleanPhone = emergencyPhone.replace(/[\s-]/g, '');
+    if (!cleanPhone || cleanPhone.length < 10) {
+      setError('Please enter a valid emergency contact phone number (at least 10 digits).');
       return;
     }
 
     // Convert integer Naira to integer kobo per §4, §22
     const indicativeRateKobo = parsedRateNaira * 100;
 
+    const categoryRatesKobo: Record<string, number> = {};
+    for (const catId of selectedCategories) {
+      const customRate = categoryRatesNaira[catId];
+      if (customRate) {
+        const parsed = parseInt(customRate, 10);
+        if (!isNaN(parsed) && parsed >= 500) {
+          categoryRatesKobo[catId] = parsed * 100;
+        }
+      }
+    }
+
+    const emergencyContact: EmergencyContact = {
+      id: profile.emergencyContact?.id || `emc_${Date.now()}`,
+      name: emergencyName.trim(),
+      phone: cleanPhone,
+      relationship: emergencyRelationship.trim(),
+      isPrimary: true,
+    };
+
     const result = await saveProfile({
       bio: bio.trim(),
       indicativeRateKobo,
       serviceRadiusKm: serviceRadius,
       categoryIds: selectedCategories,
+      categoryRates: categoryRatesKobo,
+      emergencyContact,
     });
 
     if (result.success) {
@@ -100,32 +171,44 @@ export const WorkerProfileSetupScreen: React.FC<WorkerProfileSetupScreenProps> =
           <View style={styles.sectionHeaderRow}>
             <Text style={styles.sectionTitle}>Select Your Service Categories</Text>
             <Text style={styles.categoryCountBadge}>
-              {selectedCategories.length} selected
+              Selected: {selectedCategories.length} / {MAX_CATEGORIES} (Max 5 categories per worker)
             </Text>
           </View>
           <Text style={styles.sectionHint}>
-            Choose all areas of manual or artisan work you are qualified to perform.
+            Choose up to 5 categories you are qualified to perform (§I). Enhanced categories require tiered verification.
           </Text>
 
           <View style={styles.categoryChipsContainer}>
             {categories.map((cat) => {
               const isSelected = selectedCategories.includes(cat.id);
+              const isCare = cat.verificationTier === 'care';
+              const isTechnical =
+                cat.verificationTier === 'technical_trade' || (cat.verificationTier as string) === 'technical';
+
               return (
                 <TouchableOpacity
                   key={cat.id}
                   onPress={() => toggleCategory(cat.id)}
                   activeOpacity={0.8}
-                  style={[styles.categoryChip, isSelected && styles.categoryChipSelected]}
+                  style={[
+                    styles.categoryChip,
+                    isSelected && styles.categoryChipSelected,
+                    (isCare || isTechnical) && styles.categoryChipTiered,
+                  ]}
                 >
                   <Text style={styles.categoryIcon}>{cat.icon}</Text>
-                  <Text
-                    style={[
-                      styles.categoryName,
-                      isSelected && styles.categoryNameSelected,
-                    ]}
-                  >
-                    {cat.name}
-                  </Text>
+                  <View style={styles.categoryChipTextGroup}>
+                    <Text
+                      style={[
+                        styles.categoryName,
+                        isSelected && styles.categoryNameSelected,
+                      ]}
+                    >
+                      {cat.name}
+                    </Text>
+                    {isCare && <Text style={styles.tierPillCare}>Care Tier</Text>}
+                    {isTechnical && <Text style={styles.tierPillTech}>Technical</Text>}
+                  </View>
                   {isSelected && <Text style={styles.checkMark}>✓</Text>}
                 </TouchableOpacity>
               );
@@ -170,7 +253,7 @@ export const WorkerProfileSetupScreen: React.FC<WorkerProfileSetupScreenProps> =
           </View>
 
           <Input
-            label="Rate in Naira (₦)"
+            label="Baseline Rate in Naira (₦)"
             placeholder="3500"
             value={rateNaira}
             onChangeText={(val) => setRateNaira(val.replace(/\D/g, ''))}
@@ -178,11 +261,40 @@ export const WorkerProfileSetupScreen: React.FC<WorkerProfileSetupScreenProps> =
             style={styles.rateInput}
           />
           <Text style={styles.ratePreviewText}>
-            Displayed as:{' '}
+            Default displayed as:{' '}
             <Text style={styles.ratePreviewHighlight}>
               ₦{parseInt(rateNaira || '0', 10).toLocaleString('en-NG')} / {rateUnit}
             </Text>
           </Text>
+
+          {/* Optional Individual Indicative Rates per Category (§I) */}
+          {selectedCategories.length > 0 && (
+            <View style={styles.customRatesSection}>
+              <Text style={styles.customRatesTitle}>Category-Specific Rates (Optional)</Text>
+              <Text style={styles.customRatesHint}>
+                Specify custom rates for specific trades if they differ from your baseline.
+              </Text>
+              {selectedCategories.map((catId) => {
+                const cat = categories.find((c) => c.id === catId);
+                if (!cat) return null;
+                return (
+                  <View key={catId} style={styles.customRateRow}>
+                    <Text style={styles.customRateLabel}>{cat.name}</Text>
+                    <View style={styles.customRateInputWrapper}>
+                      <Text style={styles.customRateCurrency}>₦</Text>
+                      <Input
+                        placeholder={rateNaira || '3500'}
+                        value={categoryRatesNaira[catId] || ''}
+                        onChangeText={(val) => handleCategoryRateChange(catId, val)}
+                        keyboardType="number-pad"
+                        style={styles.customRateInput}
+                      />
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          )}
         </View>
 
         {/* Section 3: Service Radius */}
@@ -230,6 +342,39 @@ export const WorkerProfileSetupScreen: React.FC<WorkerProfileSetupScreenProps> =
             style={styles.bioInput}
           />
           <Text style={styles.bioCharCount}>{bio.length} characters</Text>
+        </View>
+
+        {/* Section 5: Emergency Contact (§L) */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Emergency Contact (§L)</Text>
+          <Text style={styles.sectionHint}>
+            Required for on-duty safety monitoring, check-ins, and emergency dispatch protocols.
+          </Text>
+
+          <Input
+            label="Contact Full Name"
+            placeholder="e.g. Chioma Adebayo"
+            value={emergencyName}
+            onChangeText={setEmergencyName}
+            style={styles.fieldInput}
+          />
+
+          <Input
+            label="Relationship"
+            placeholder="e.g. Spouse, Brother, Sister, Parent"
+            value={emergencyRelationship}
+            onChangeText={setEmergencyRelationship}
+            style={styles.fieldInput}
+          />
+
+          <Input
+            label="Contact Phone Number"
+            placeholder="e.g. +2348012345678"
+            value={emergencyPhone}
+            onChangeText={setEmergencyPhone}
+            keyboardType="phone-pad"
+            style={styles.fieldInput}
+          />
         </View>
 
         <Button
@@ -423,5 +568,81 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     marginTop: Spacing.sm,
+  },
+  categoryChipTiered: {
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+  },
+  categoryChipTextGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  tierPillCare: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: Colors.secondary,
+    backgroundColor: Colors.secondaryContainer,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: Radii.sm,
+    overflow: 'hidden',
+  },
+  tierPillTech: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: Colors.tertiary,
+    backgroundColor: Colors.tertiaryContainer,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: Radii.sm,
+    overflow: 'hidden',
+  },
+  customRatesSection: {
+    marginTop: Spacing.lg,
+    paddingTop: Spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+  },
+  customRatesTitle: {
+    ...Typography.scale.labelLg,
+    color: Colors.textPrimary,
+    marginBottom: 2,
+  },
+  customRatesHint: {
+    ...Typography.scale.bodySm,
+    color: Colors.textSecondary,
+    marginBottom: Spacing.md,
+  },
+  customRateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: Spacing.sm,
+  },
+  customRateLabel: {
+    ...Typography.scale.bodyMd,
+    color: Colors.textPrimary,
+    flex: 1,
+    marginRight: Spacing.sm,
+  },
+  customRateInputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: 130,
+  },
+  customRateCurrency: {
+    ...Typography.scale.headlineSm,
+    color: Colors.textSecondary,
+    marginRight: 4,
+  },
+  customRateInput: {
+    flex: 1,
+    height: 40,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  fieldInput: {
+    marginBottom: Spacing.md,
   },
 });

@@ -26,11 +26,25 @@ export const EmployerActiveJobScreen: React.FC = () => {
   const [sosModalVisible, setSosModalVisible] = useState<boolean>(false);
   const [ratingModalVisible, setRatingModalVisible] = useState<boolean>(false);
   const [chatModalVisible, setChatModalVisible] = useState<boolean>(false);
+  const [safeguardDismissed, setSafeguardDismissed] = useState<boolean>(false);
   const [workerLocation, setWorkerLocation] = useState<{
     latitude: number;
     longitude: number;
     timestamp: number;
   } | null>(null);
+
+  const isCareTier =
+    job?.categoryTier === 'care' ||
+    job?.categoryId === 'cat_childcare' ||
+    job?.categoryId === 'cat_elderly_care' ||
+    job?.categoryId === 'cat_special_needs';
+
+  const isFirstBookingWithWorker = React.useMemo(() => {
+    // If job data is incomplete, default to showing the safeguard (true)
+    // rather than guessing with fabricated IDs
+    if (!job?.employerId || !job?.hiredWorkerId) return true;
+    return ApiService.isFirstBookingBetween(job.employerId, job.hiredWorkerId);
+  }, [job?.employerId, job?.hiredWorkerId]);
 
   // Sync state with createdJobsStore and subscribe to Supabase Realtime
   useEffect(() => {
@@ -162,6 +176,42 @@ export const EmployerActiveJobScreen: React.FC = () => {
       })()}
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
+        {/* Dismissible First-Booking Adult Presence Safeguard (§B.2) */}
+        {isCareTier && isFirstBookingWithWorker && !safeguardDismissed && (
+          <View style={styles.firstBookingBanner}>
+            <View style={styles.firstBookingHeaderRow}>
+              <Text style={styles.firstBookingIcon}>🛡️</Text>
+              <View style={styles.firstBookingTextGroup}>
+                <Text style={styles.firstBookingTitle}>First-Booking Adult Presence Safeguard (§B.2)</Text>
+                <Text style={styles.firstBookingBody}>
+                  As this is your first booking with this care worker, an adult employer or designated guardian should be present on-site at commencement. (Dismissible, non-blocking safeguard).
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setSafeguardDismissed(true)}
+                style={styles.firstBookingDismissBtn}
+                accessibilityRole="button"
+                accessibilityLabel="Dismiss first-booking notice"
+              >
+                <Text style={styles.firstBookingDismissText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {/* Care Tier 3-Hour Active Monitoring Status (§B.2) */}
+        {isCareTier && job.status === 'in_progress' && (
+          <View style={styles.careStatusBanner}>
+            <Text style={styles.careStatusIcon}>⏱️</Text>
+            <View style={styles.careStatusTextGroup}>
+              <Text style={styles.careStatusTitle}>Care Safeguard Monitoring Active (§B.2)</Text>
+              <Text style={styles.careStatusBody}>
+                Automated 3-hour worker safety check-ins are actively enforced for this care engagement.
+              </Text>
+            </View>
+          </View>
+        )}
+
         {/* Job Header & Status */}
         <Card style={styles.headerCard}>
           <View style={styles.headerRow}>
@@ -822,5 +872,71 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#3B82F6',
     marginTop: 2,
+  },
+  firstBookingBanner: {
+    backgroundColor: '#E0F2FE',
+    borderWidth: 1,
+    borderColor: '#0284C7',
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    marginBottom: SPACING.md,
+  },
+  firstBookingHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  firstBookingIcon: {
+    fontSize: 22,
+    marginRight: SPACING.sm,
+    marginTop: 2,
+  },
+  firstBookingTextGroup: {
+    flex: 1,
+  },
+  firstBookingTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0369A1',
+    marginBottom: 2,
+  },
+  firstBookingBody: {
+    fontSize: 11,
+    color: '#0369A1',
+    lineHeight: 16,
+  },
+  firstBookingDismissBtn: {
+    padding: 4,
+    marginLeft: SPACING.xs,
+  },
+  firstBookingDismissText: {
+    color: '#0369A1',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  careStatusBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F0F9FF',
+    borderWidth: 1,
+    borderColor: '#BAE6FD',
+    borderRadius: RADIUS.md,
+    padding: SPACING.sm,
+    marginBottom: SPACING.md,
+  },
+  careStatusIcon: {
+    fontSize: 16,
+    marginRight: SPACING.sm,
+  },
+  careStatusTextGroup: {
+    flex: 1,
+  },
+  careStatusTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0369A1',
+  },
+  careStatusBody: {
+    fontSize: 10,
+    color: '#0284C7',
   },
 });

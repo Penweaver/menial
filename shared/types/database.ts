@@ -24,6 +24,8 @@ import type {
   UserAccountStatus,
   VerificationAction,
   VerificationStatus,
+  VerificationTier,
+  TechnicalSubStatus,
 } from './enums';
 
 export type {
@@ -43,6 +45,8 @@ export type {
   UserAccountStatus,
   VerificationAction,
   VerificationStatus,
+  VerificationTier,
+  TechnicalSubStatus,
 };
 
 // ============================================================================
@@ -77,6 +81,26 @@ export interface ProfileInsert {
 }
 
 /**
+ * Structured emergency contact details for workers and employers (§L).
+ */
+export interface EmergencyContact {
+  name: string;
+  relationship: string;
+  phone: string;
+}
+
+/**
+ * Structured reference contact for Care tier verification vetting (§B.2, §C).
+ */
+export interface CareReferenceContact {
+  name: string;
+  relationship: string;
+  phone: string;
+  admin_contact_outcome?: string | null;
+  contacted_at?: string | null;
+}
+
+/**
  * Worker-specific marketplace profile and capabilities.
  */
 export interface WorkerProfile {
@@ -92,6 +116,7 @@ export interface WorkerProfile {
   latitude: number | null;
   longitude: number | null;
   verification_status: VerificationStatus;
+  emergency_contact?: EmergencyContact | null;
 }
 
 export interface WorkerProfileInsert {
@@ -107,6 +132,7 @@ export interface WorkerProfileInsert {
   latitude?: number | null;
   longitude?: number | null;
   verification_status?: VerificationStatus;
+  emergency_contact?: EmergencyContact | null;
 }
 
 /**
@@ -118,6 +144,7 @@ export interface EmployerProfile {
   is_business: boolean;
   rating_avg: number | null;
   total_jobs_count: number;
+  emergency_contact?: EmergencyContact | null;
 }
 
 export interface EmployerProfileInsert {
@@ -126,6 +153,7 @@ export interface EmployerProfileInsert {
   is_business?: boolean;
   rating_avg?: number | null;
   total_jobs_count?: number;
+  emergency_contact?: EmergencyContact | null;
 }
 
 // ============================================================================
@@ -205,6 +233,11 @@ export interface Category {
   name: string;
   description: string | null;
   icon: string | null;
+  verification_tier: VerificationTier;
+  /** Hard floor minimum wage in kobo. Set by Admin. Null = inactive. §G */
+  min_pay_kobo: number | null;
+  /** Soft warning ceiling in kobo. Flags unusually high bids. Null = inactive. §G */
+  max_pay_kobo: number | null;
   is_active: boolean;
   display_order: number;
   created_at: string;
@@ -216,6 +249,9 @@ export interface CategoryInsert {
   name: string;
   description?: string | null;
   icon?: string | null;
+  verification_tier?: VerificationTier;
+  min_pay_kobo?: number | null;
+  max_pay_kobo?: number | null;
   is_active?: boolean;
   display_order?: number;
   created_at?: string;
@@ -223,16 +259,24 @@ export interface CategoryInsert {
 }
 
 /**
- * Many-to-many relationship between workers and service categories.
+ * Many-to-many relationship between workers and service categories (§I).
  */
 export interface WorkerCategory {
   worker_id: string;
   category_id: string;
+  indicative_rate_kobo?: number;
+  added_at?: string;
+  completed_jobs_count?: number;
+  average_rating?: number;
 }
 
 export interface WorkerCategoryInsert {
   worker_id: string;
   category_id: string;
+  indicative_rate_kobo?: number;
+  added_at?: string;
+  completed_jobs_count?: number;
+  average_rating?: number;
 }
 
 // ============================================================================
@@ -373,6 +417,14 @@ export interface VerificationRecord {
   id: string;
   user_id: string;
   verification_type: string;
+  tier: VerificationTier;
+  category_id?: string | null;
+  sub_status?: TechnicalSubStatus | null;
+  references?: CareReferenceContact[] | null;
+  certificate_type?: string | null;
+  certificate_grade?: string | null;
+  experience_years?: number | null;
+  portfolio_urls?: string[] | null;
   document_type: string | null;
   document_url: string | null;
   submitted_data: Record<string, unknown> | null;
@@ -388,6 +440,14 @@ export interface VerificationRecordInsert {
   id?: string;
   user_id: string;
   verification_type: string;
+  tier?: VerificationTier;
+  category_id?: string | null;
+  sub_status?: TechnicalSubStatus | null;
+  references?: CareReferenceContact[] | null;
+  certificate_type?: string | null;
+  certificate_grade?: string | null;
+  experience_years?: number | null;
+  portfolio_urls?: string[] | null;
   document_type?: string | null;
   document_url?: string | null;
   submitted_data?: Record<string, unknown> | null;
@@ -637,6 +697,8 @@ export interface SafetyReport {
   resolution_note: string | null;
   resolved_by_id: string | null;
   resolved_at: string | null;
+  acknowledged_at?: string | null;
+  acknowledged_by?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -655,6 +717,8 @@ export interface SafetyReportInsert {
   resolution_note?: string | null;
   resolved_by_id?: string | null;
   resolved_at?: string | null;
+  acknowledged_at?: string | null;
+  acknowledged_by?: string | null;
   created_at?: string;
   updated_at?: string;
 }

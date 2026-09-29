@@ -32,6 +32,8 @@ interface SafetyReportItem {
   latitude?: number;
   longitude?: number;
   status: 'open' | 'assigned' | 'under_review' | 'resolved' | 'dismissed';
+  acknowledged_at?: string;
+  acknowledged_by?: string;
   resolution_note?: string;
   resolved_by_name?: string;
   created_at: string;
@@ -44,6 +46,7 @@ export default function SafetyReportsPage() {
   const [statusFilter, setStatusFilter] = useState<'open' | 'resolved' | 'all'>('open');
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [isAcknowledgingId, setIsAcknowledgingId] = useState<string | null>(null);
 
   // Resolution Modal State
   const [selectedReport, setSelectedReport] = useState<SafetyReportItem | null>(null);
@@ -51,6 +54,28 @@ export default function SafetyReportsPage() {
   const [newStatus, setNewStatus] = useState<'resolved' | 'dismissed'>('resolved');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  const handleAcknowledgeSos = async (reportId: string) => {
+    setIsAcknowledgingId(reportId);
+    try {
+      const ops = getAdminOperationsService();
+      await ops.acknowledgeSafetySos({
+        reportId,
+        acknowledgementNote: 'Audible emergency alert acknowledged in Safety Centre.',
+      });
+      setReports((prev) =>
+        prev.map((r) =>
+          r.id === reportId
+            ? { ...r, acknowledged_at: new Date().toISOString() }
+            : r
+        )
+      );
+    } catch (err: unknown) {
+      console.error('Failed to acknowledge safety SOS:', err);
+    } finally {
+      setIsAcknowledgingId(null);
+    }
+  };
 
   const fetchReports = useCallback(async () => {
     setIsLoading(true);
@@ -75,6 +100,8 @@ export default function SafetyReportsPage() {
         latitude: row.latitude ? Number(row.latitude) : undefined,
         longitude: row.longitude ? Number(row.longitude) : undefined,
         status: (row.status as any) || 'open',
+        acknowledged_at: row.acknowledged_at ? String(row.acknowledged_at) : undefined,
+        acknowledged_by: row.acknowledged_by ? String(row.acknowledged_by) : undefined,
         resolution_note: row.resolution_note ? String(row.resolution_note) : undefined,
         resolved_by_name: row.resolved_by_name ? String(row.resolved_by_name) : undefined,
         created_at: String(row.created_at || new Date().toISOString()),
@@ -294,9 +321,27 @@ export default function SafetyReportsPage() {
                     Reported {new Date(report.created_at).toLocaleTimeString('en-GB')}
                   </span>
                   {report.status === 'open' ? (
-                    <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-error text-white animate-pulse">
-                      Urgent Action Required
-                    </span>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {!report.acknowledged_at ? (
+                        <>
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-error text-white animate-pulse">
+                            🚨 Unacknowledged SOS (Alarm Active)
+                          </span>
+                          <button
+                            type="button"
+                            disabled={isAcknowledgingId === report.id}
+                            onClick={() => handleAcknowledgeSos(report.id)}
+                            className="px-2.5 py-0.5 rounded-full bg-white hover:bg-red-50 text-red-700 text-[10px] font-bold border border-red-300 transition-colors shadow-xs"
+                          >
+                            {isAcknowledgingId === report.id ? 'Acknowledging...' : 'Acknowledge SOS'}
+                          </button>
+                        </>
+                      ) : (
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
+                          ✓ SOS Acknowledged (Alarm Silenced)
+                        </span>
+                      )}
+                    </div>
                   ) : (
                     <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-secondary-container text-secondary-on-container">
                       Resolved

@@ -1,11 +1,15 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { ApiService, ServiceCategory } from '../services/api';
 import type { JobPricingBreakdown } from '@shared/services/job/JobService';
+import type { VerificationTier } from '@shared/types/enums';
 
 export interface JobDraft {
   categoryId: string;
   categoryName: string;
   categoryIcon: string;
+  categoryTier?: VerificationTier;
+  minPayKobo?: number | null;
+  maxPayKobo?: number | null;
   title: string;
   description: string;
   locationText: string;
@@ -15,6 +19,7 @@ export interface JobDraft {
   durationMinutes: number;
   numberOfWorkers: number;
   workerPayKobo: number; // Per-worker pay in kobo (§29)
+  aboveCategoryCeiling?: boolean;
 }
 
 interface JobCreationContextType {
@@ -37,6 +42,9 @@ const defaultDraft: JobDraft = {
   categoryId: 'cat_cleaning',
   categoryName: 'House Cleaning',
   categoryIcon: '🧹',
+  categoryTier: 'standard',
+  minPayKobo: null,
+  maxPayKobo: null,
   title: '',
   description: '',
   locationText: '',

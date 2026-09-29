@@ -34,6 +34,17 @@ export const WorkerActiveJobScreen: React.FC = () => {
   const [completionNotes, setCompletionNotes] = useState<string>('Deep scrub completed. Tiles restored and windows sanitized.');
   const [workSeconds, setWorkSeconds] = useState<number>(3640); // ~1h 00m
 
+  // 3-Hour Care Tier Safeguard Active Monitoring (§B.2)
+  const isCareTier =
+    job?.categoryTier === 'care' ||
+    job?.categoryId === 'cat_childcare' ||
+    job?.categoryId === 'cat_elderly_care' ||
+    job?.categoryId === 'cat_special_needs';
+
+  const CHECK_IN_INTERVAL_SECONDS = 3 * 3600; // 3 hours = 10,800 seconds (§B.2)
+  const [lastCheckInSeconds, setLastCheckInSeconds] = useState<number>(0);
+  const [showCareCheckInModal, setShowCareCheckInModal] = useState<boolean>(false);
+
   // Offline sync listener & mutation handlers (§51)
   useEffect(() => {
     const unsubQueue = OfflineSyncService.subscribe((count) => {
@@ -99,16 +110,39 @@ export const WorkerActiveJobScreen: React.FC = () => {
     return () => clearInterval(beaconInterval);
   }, [job?.status, job?.id]);
 
-  // Active work stopwatch timer
+  // Active work stopwatch timer & 3-hour Care check-in prompt trigger (§B.2)
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (job?.status === 'in_progress') {
       interval = setInterval(() => {
-        setWorkSeconds((prev) => prev + 1);
+        setWorkSeconds((prev) => {
+          const next = prev + 1;
+          // Trigger 3-hour check-in prompt if Care tier and threshold elapsed
+          if (
+            isCareTier &&
+            next > 0 &&
+            next - lastCheckInSeconds >= CHECK_IN_INTERVAL_SECONDS &&
+            !showCareCheckInModal
+          ) {
+            setShowCareCheckInModal(true);
+            NotificationService.sendLocalNotification({
+              title: '3-Hour Care Check-In Required (§B.2)',
+              body: 'Please confirm you are safe and continuing duty on this care engagement.',
+            });
+          }
+          return next;
+        });
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [job?.status]);
+  }, [job?.status, isCareTier, lastCheckInSeconds, showCareCheckInModal]);
+
+  const handleConfirmSafeCheckIn = () => {
+    ApiService.recordSafetyCheckIn(job.id, 'safe');
+    setLastCheckInSeconds(workSeconds);
+    setShowCareCheckInModal(false);
+    Alert.alert('Check-In Confirmed', 'Your safe status has been logged and communicated to Trust & Safety (§B.2).');
+  };
 
   const formatTimer = (totalSecs: number) => {
     const hrs = Math.floor(totalSecs / 3600);
@@ -437,6 +471,27 @@ export const WorkerActiveJobScreen: React.FC = () => {
               </View>
             </View>
 
+            {/* Care Tier 3-Hour Safeguard Monitoring Banner (§B.2) */}
+            {isCareTier && (
+              <View style={styles.careMonitoringBanner}>
+                <View style={styles.careMonitoringHeaderRow}>
+                  <Text style={styles.careMonitoringIcon}>🛡️</Text>
+                  <Text style={styles.careMonitoringTitle}>Care Tier Safeguard Active (§B.2)</Text>
+                  {__DEV__ && (
+                    <TouchableOpacity
+                      onPress={() => setShowCareCheckInModal(true)}
+                      style={styles.careTestBtn}
+                    >
+                      <Text style={styles.careTestBtnText}>Test Check-In</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+                <Text style={styles.careMonitoringText}>
+                  Mandatory on-duty safety check-ins occur at 3-hour intervals. Next prompt fires automatically.
+                </Text>
+              </View>
+            )}
+
             {/* Task Checklist Items */}
             <View style={styles.checklistCard}>
               <Text style={styles.checklistHeading}>Task Requirements</Text>
@@ -569,6 +624,40 @@ export const WorkerActiveJobScreen: React.FC = () => {
         currentUserRole="worker"
         counterpartyName={job.employerName || 'Chief Adeleke'}
       />
+
+      {/* 3-Hour Periodic Care Safety Check-In Modal (§B.2) */}
+      {showCareCheckInModal && (
+        <View style={styles.careModalBackdrop}>
+          <View style={styles.careModalCard}>
+            <View style={styles.careModalHeaderRow}>
+              <Text style={styles.careModalIcon}>🛡️</Text>
+              <View style={styles.careModalTitleGroup}>
+                <Text style={styles.careModalTitle}>3-Hour Safety Check-In (§B.2)</Text>
+                <Text style={styles.careModalSub}>Care Tier Safeguarding Protocol</Text>
+              </View>
+            </View>
+            <Text style={styles.careModalBody}>
+              You have been on-site for over 3 hours on this care engagement. Please confirm your ongoing safety and duty status.
+            </Text>
+            <View style={styles.careModalBtnGroup}>
+              <Button
+                title="✓ I Am Safe & On-Duty"
+                onPress={handleConfirmSafeCheckIn}
+                style={styles.careModalSafeBtn}
+              />
+              <Button
+                title="🚨 Emergency SOS"
+                variant="danger"
+                onPress={() => {
+                  setShowCareCheckInModal(false);
+                  setSosModalVisible(true);
+                }}
+                style={styles.careModalSosBtn}
+              />
+            </View>
+          </View>
+        </View>
+      )}
     </View>
   );
 };
@@ -947,5 +1036,106 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     fontSize: 12,
     fontWeight: '700',
+  },
+  careMonitoringBanner: {
+    backgroundColor: '#E0F2FE',
+    borderWidth: 1,
+    borderColor: '#0284C7',
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    marginTop: SPACING.md,
+    marginBottom: SPACING.xs,
+  },
+  careMonitoringHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  careMonitoringIcon: {
+    fontSize: 18,
+    marginRight: 6,
+  },
+  careMonitoringTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0369A1',
+    flex: 1,
+  },
+  careTestBtn: {
+    backgroundColor: '#0284C7',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: RADIUS.sm,
+  },
+  careTestBtnText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  careMonitoringText: {
+    fontSize: 11,
+    color: '#0369A1',
+    lineHeight: 16,
+  },
+  careModalBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(15, 23, 42, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: SPACING.lg,
+    zIndex: 9999,
+  },
+  careModalCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: RADIUS.lg,
+    padding: SPACING.lg,
+    width: '100%',
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  careModalHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SPACING.sm,
+  },
+  careModalIcon: {
+    fontSize: 28,
+    marginRight: SPACING.sm,
+  },
+  careModalTitleGroup: {
+    flex: 1,
+  },
+  careModalTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+  },
+  careModalSub: {
+    fontSize: 11,
+    color: '#0284C7',
+    fontWeight: '600',
+  },
+  careModalBody: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    lineHeight: 18,
+    marginBottom: SPACING.lg,
+  },
+  careModalBtnGroup: {
+    gap: SPACING.sm,
+  },
+  careModalSafeBtn: {
+    backgroundColor: '#0284C7',
+  },
+  careModalSosBtn: {
+    marginTop: 2,
   },
 });

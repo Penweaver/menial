@@ -2,12 +2,19 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { ApiService, ServiceCategory, WorkerPersonalDetails } from '../services/api';
 import { useAuth } from './AuthContext';
 import type { VerificationStatus } from '@shared/types/enums';
+import type {
+  CareVerificationSubmissionData,
+  TechnicalVerificationSubmissionData,
+} from '@shared/services/verification/VerificationService';
+import type { EmergencyContact } from '@shared/services/trust/TrustSafetyService';
 
 export interface WorkerProfileState {
   bio: string;
   indicativeRateKobo: number;
   serviceRadiusKm: number;
   categoryIds: string[];
+  categoryRates?: Record<string, number>;
+  emergencyContact?: EmergencyContact;
   isComplete: boolean;
 }
 
@@ -48,12 +55,16 @@ interface WorkerContextType {
     indicativeRateKobo: number;
     serviceRadiusKm: number;
     categoryIds: string[];
+    categoryRates?: Record<string, number>;
+    emergencyContact?: EmergencyContact;
   }) => Promise<{ success: boolean; error?: string }>;
   submitVerification: (params: {
     documentType: 'nin' | 'voters_card' | 'drivers_license' | 'international_passport';
     idNumber: string;
     documentUrl?: string;
   }) => Promise<{ success: boolean; error?: string }>;
+  submitCareVerification: (data: CareVerificationSubmissionData) => Promise<{ success: boolean; error?: string }>;
+  submitTechnicalVerification: (data: TechnicalVerificationSubmissionData) => Promise<{ success: boolean; error?: string }>;
   saveBankDetails: (details: {
     bankCode: string;
     bankName: string;
@@ -102,6 +113,8 @@ export const WorkerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       indicativeRateKobo: number;
       serviceRadiusKm: number;
       categoryIds: string[];
+      categoryRates?: Record<string, number>;
+      emergencyContact?: EmergencyContact;
     }): Promise<{ success: boolean; error?: string }> => {
       try {
         setIsLoading(true);
@@ -111,6 +124,20 @@ export const WorkerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           serviceRadiusKm: params.serviceRadiusKm,
           categoryIds: params.categoryIds,
         });
+
+        if (params.categoryIds.length > 0) {
+          await ApiService.setWorkerCategories(
+            params.categoryIds.map((catId) => ({
+              categoryId: catId,
+              indicativeRateKobo: params.categoryRates?.[catId] ?? params.indicativeRateKobo,
+            })),
+            5
+          );
+        }
+
+        if (params.emergencyContact) {
+          await ApiService.updateEmergencyContact(params.emergencyContact);
+        }
 
         setProfile({
           ...params,
@@ -169,6 +196,61 @@ export const WorkerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         return { success: true };
       } catch (err: any) {
         return { success: false, error: err.message || 'Verification submission error' };
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [userId]
+  );
+
+  const submitCareVerification = useCallback(
+    async (data: CareVerificationSubmissionData): Promise<{ success: boolean; error?: string }> => {
+      try {
+        setIsLoading(true);
+        const val = ApiService.validateCareReferences(data.references);
+        if (!val.valid) {
+          return { success: false, error: val.error || 'Minimum 2 valid references required.' };
+        }
+        const result = await ApiService.submitCareVerification(userId, data);
+        if (!result.success) {
+          return { success: false, error: result.error || 'Care verification submission failed' };
+        }
+        setVerification((prev) => ({
+          ...prev,
+          status: result.status,
+          verificationId: result.verificationId,
+          submittedAt: new Date().toISOString(),
+        }));
+        return { success: true };
+      } catch (err: any) {
+        return { success: false, error: err.message || 'Care verification submission error' };
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [userId]
+  );
+
+  const submitTechnicalVerification = useCallback(
+    async (data: TechnicalVerificationSubmissionData): Promise<{ success: boolean; error?: string }> => {
+      try {
+        setIsLoading(true);
+        if (!data.portfolioUrls || data.portfolioUrls.length === 0) {
+          return { success: false, error: 'At least one portfolio photo or evidence upload is required.' };
+        }
+        const result = await ApiService.submitTechnicalVerification(userId, data);
+        if (!result.success) {
+          return { success: false, error: result.error || 'Technical verification submission failed' };
+        }
+        setVerification((prev) => ({
+          ...prev,
+          status: result.status,
+          verificationId: result.verificationId,
+          submittedAt: new Date().toISOString(),
+        }));
+        return { success: true };
+      } catch (err: any) {
+        return { success: false, error: err.message || 'Technical verification submission error' };
       } finally {
         setIsLoading(false);
       }
@@ -264,6 +346,8 @@ export const WorkerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         isLoading,
         saveProfile,
         submitVerification,
+        submitCareVerification,
+        submitTechnicalVerification,
         saveBankDetails,
         updatePersonalDetails,
         updateSettings,

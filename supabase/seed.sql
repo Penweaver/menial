@@ -71,7 +71,8 @@ INSERT INTO public.platform_settings (key, value, description) VALUES
   ('min_job_amount_kobo',       '50000', 'Minimum per-worker job pay in kobo (₦500). Prevents spam/trivial listings.'),
   ('max_job_amount_kobo',       '50000000', 'Maximum per-worker job pay in kobo (₦500,000). Safety cap.'),
   ('session_expiry_hours',      '12',    'Admin/Superadmin session idle timeout in hours before re-authentication required. §23'),
-  ('currency',                  'NGN',   'Platform operating currency. Fixed to NGN for MVP. §4')
+  ('currency',                  'NGN',   'Platform operating currency. Fixed to NGN for MVP. §4'),
+  ('worker_max_categories',     '5',     'Maximum number of service categories a worker can select (§I)')
 ON CONFLICT (key) DO NOTHING;
 
 

@@ -2,12 +2,13 @@
  * Menial Platform - Job & Marketplace Service
  * 
  * Implements job lifecycle management, per-worker pricing calculation in kobo,
- * hiring validations, worker assignments, cancellation windows, and no-shows.
- * Reference: menial-master-spec-v2.md (§29, §30, §31, §32, §33, §35, §36, §40)
+ * category wage bounds validation (§G), tiered hiring eligibility checks (§B),
+ * hiring validations, worker assignments, cancellation windows, and safety checklists.
+ * Reference: menial-master-spec-v2.md (§29, §30, §31, §32, §33, §35, §36, §40) & Spec Addendum v3 (§B, §G)
  */
 
 import type { IDatabaseClient } from '../admin/AdminService';
-import type { JobStatus, ActorPartyType } from '../../types/enums';
+import type { JobStatus, ActorPartyType, VerificationTier } from '../../types/enums';
 
 export interface CreateJobParams {
   categoryId: string;
@@ -30,6 +31,25 @@ export interface JobPricingBreakdown {
   platformFeeKobo: number;
   totalAmountKobo: number;
   currency: 'NGN';
+}
+
+export interface WageBoundsCheckResult {
+  isValid: boolean;
+  isBelowFloor: boolean;
+  isAboveCeiling: boolean;
+  minPayKobo: number | null;
+  maxPayKobo: number | null;
+  error?: string;
+  warning?: string;
+}
+
+export interface CategorySafetyConfig {
+  tier: VerificationTier;
+  requiresFirstBookingNotice?: boolean;
+  firstBookingNoticeText?: string;
+  elevatedCheckInThresholdHours?: number;
+  disclaimer?: string;
+  preJobChecklist?: string[];
 }
 
 export interface HireWorkerParams {
@@ -81,12 +101,138 @@ export class JobService {
   }
 
   /**
-   * Creates a job listing draft in the database (§29, §30).
+   * Evaluates category wage bounds (§G):
+   * - min_pay_kobo: Hard block if proposed pay is below floor. Only active when NOT NULL.
+   * - max_pay_kobo: Soft warning ceiling if proposed pay exceeds typical rates. Only active when NOT NULL.
+   * - Skips gracefully without error if bounds are NULL.
+   */
+  public static validateCategoryWageBounds(
+    workerPayKobo: number,
+    category: {
+      name: string;
+      min_pay_kobo?: number | null;
+      max_pay_kobo?: number | null;
+    }
+  ): WageBoundsCheckResult {
+    const minPay = category.min_pay_kobo ?? null;
+    const maxPay = category.max_pay_kobo ?? null;
+
+    // Hard floor check: strictly active ONLY if min_pay_kobo is NOT NULL (§G)
+    if (minPay !== null && workerPayKobo < minPay) {
+      return {
+        isValid: false,
+        isBelowFloor: true,
+        isAboveCeiling: false,
+        minPayKobo: minPay,
+        maxPayKobo: maxPay,
+        error: `Proposed pay of ₦${(workerPayKobo / 100).toLocaleString()} is below the required minimum wage floor for ${category.name} (minimum: ₦${(minPay / 100).toLocaleString()}) (§G).`,
+      };
+    }
+
+    // Soft warning ceiling: strictly active ONLY if max_pay_kobo is NOT NULL (§G)
+    if (maxPay !== null && workerPayKobo > maxPay) {
+      return {
+        isValid: true, // Not blocked!
+        isBelowFloor: false,
+        isAboveCeiling: true,
+        minPayKobo: minPay,
+        maxPayKobo: maxPay,
+        warning: `This proposed rate (₦${(workerPayKobo / 100).toLocaleString()}) is higher than usual for ${category.name}. Please confirm this amount is intended (§G).`,
+      };
+    }
+
+    return {
+      isValid: true,
+      isBelowFloor: false,
+      isAboveCeiling: false,
+      minPayKobo: minPay,
+      maxPayKobo: maxPay,
+    };
+  }
+
+  /**
+   * Retrieves category-specific safety safeguards, checklists, and disclaimers (§B.2, §B.3).
+   */
+  public static getCategorySafetyConfig(
+    categoryName: string,
+    tier: VerificationTier
+  ): CategorySafetyConfig {
+    if (tier === 'care') {
+      return {
+        tier: 'care',
+        requiresFirstBookingNotice: true,
+        firstBookingNoticeText:
+          'First-booking safeguard: An adult should be present or reachable on-site for the duration of this care service (§B.2).',
+        elevatedCheckInThresholdHours: 3,
+      };
+    }
+
+    if (tier === 'technical_trade') {
+      const lower = categoryName.toLowerCase();
+      const isElectrical = lower.includes('electric');
+      const isPlumbing = lower.includes('plumb');
+
+      let checklist: string[] | undefined;
+      if (isElectrical) {
+        checklist = [
+          'Confirm main electrical breaker / distribution panel is accessible and can be shut off.',
+          'Ensure work area is dry and clear of moisture or standing water.',
+          'Verify generator or inverter transfer switches are isolated before electrical work begins.',
+        ];
+      } else if (isPlumbing) {
+        checklist = [
+          'Confirm main water supply shutoff / stopcock valve is accessible and functional.',
+          'Identify location of water storage tanks and overflow pathways.',
+        ];
+      }
+
+      return {
+        tier: 'technical_trade',
+        disclaimer:
+          'Menial verifies worker identity and, where provided, trade credentials; Menial is not a party to the technical work performed (§B.3).',
+        preJobChecklist: checklist,
+      };
+    }
+
+    return {
+      tier: 'standard',
+    };
+  }
+
+  /**
+   * Validates if a worker is verified for the target category tier before booking (§B.2, §B.3).
+   */
+  public static checkWorkerCategoryEligibility(
+    category: { id: string; name: string; verification_tier: VerificationTier },
+    workerCategoryVerification?: { status: string; tier: VerificationTier; subStatus?: string }
+  ): { eligible: boolean; error?: string } {
+    if (category.verification_tier === 'care') {
+      if (!workerCategoryVerification || workerCategoryVerification.status !== 'verified') {
+        return {
+          eligible: false,
+          error: `Worker does not hold required CARE_VERIFIED status for ${category.name} (§B.2). Requires Police Character Certificate and verified references.`,
+        };
+      }
+    } else if (category.verification_tier === 'technical_trade') {
+      if (!workerCategoryVerification || workerCategoryVerification.status !== 'verified') {
+        return {
+          eligible: false,
+          error: `Worker does not hold required TECHNICAL_VERIFIED status for ${category.name} (§B.3). Requires experience and work proof review.`,
+        };
+      }
+    }
+
+    return { eligible: true };
+  }
+
+  /**
+   * Creates a job listing draft in the database with wage bounds validation (§29, §30, §G).
    */
   public async createJob(params: CreateJobParams): Promise<{
     jobId: string;
     publicJobId: string;
     pricing: JobPricingBreakdown;
+    aboveCategoryCeiling?: boolean;
   }> {
     const { data, error } = await this.db.rpc<Record<string, unknown>>(
       'create_job_listing',
@@ -112,6 +258,7 @@ export class JobService {
     return {
       jobId: String(data.job_id),
       publicJobId: String(data.public_job_id),
+      aboveCategoryCeiling: Boolean(data.above_category_ceiling),
       pricing: {
         workerPayKobo: Number(data.worker_pay_kobo),
         numberOfWorkers: Number(data.number_of_workers),

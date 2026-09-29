@@ -39,8 +39,16 @@ import type { BankAccountDetails, PayoutDisbursementResult } from '@shared/servi
 import type { DiscoveredWorker } from '@shared/services/profile/ProfileService';
 import type { IDatabaseClient } from '@shared/services/admin/AdminService';
 import type { PhoneAuthSession } from '@shared/services/auth/AuthService';
-import type { UserAccountType, VerificationStatus, VerificationAction, DisputeReason } from '@shared/types/enums';
-import type { VerificationSubmissionData, VerificationSubmissionResult } from '@shared/services/verification/VerificationService';
+import type { UserAccountType, VerificationStatus, VerificationAction, DisputeReason, VerificationTier, TechnicalSubStatus } from '@shared/types/enums';
+import type {
+  VerificationSubmissionData,
+  VerificationSubmissionResult,
+  CareVerificationSubmissionData,
+  TechnicalVerificationSubmissionData,
+  CareReferenceInput,
+} from '@shared/services/verification/VerificationService';
+import { VerificationService } from '@shared/services/verification/VerificationService';
+import type { CategorySafetyConfig } from '@shared/services/job/JobService';
 
 // Singletons for mobile service layer
 export const smsProvider = new MockSmsProvider({ enableDevLogging: true });
@@ -602,66 +610,278 @@ export interface ServiceCategory {
   name: string;
   description: string;
   icon: string;
+  verificationTier?: VerificationTier;
+  minPayKobo?: number | null;
+  maxPayKobo?: number | null;
   suggestedRateKobo: number;
 }
 
-// Master Spec Seed Categories (§26)
+// Master Spec Section A Seed Categories (v3 Taxonomy - 26 Categories)
 export const SEED_CATEGORIES: ServiceCategory[] = [
+  // --- Standard Tier (15 Categories) ---
   {
     id: 'cat_cleaning',
     name: 'House Cleaning',
     description: 'Home, office, deep scrubbing, and move-in cleaning',
     icon: '🧹',
-    suggestedRateKobo: 350000, // ₦3,500/hr
+    verificationTier: 'standard',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 350000, // ₦3,500
   },
   {
     id: 'cat_moving',
     name: 'Moving & Loading',
     description: 'Heavy lifting, truck loading, and item transfer',
     icon: '📦',
-    suggestedRateKobo: 500000, // ₦5,000/hr
+    verificationTier: 'standard',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 500000, // ₦5,000
   },
   {
     id: 'cat_laundry',
     name: 'Laundry & Ironing',
     description: 'Hand washing, machine wash, and precision ironing',
     icon: '👕',
-    suggestedRateKobo: 300000, // ₦3,000/task
+    verificationTier: 'standard',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 300000, // ₦3,000
   },
   {
     id: 'cat_gardening',
     name: 'Gardening & Compound',
     description: 'Lawn trimming, weeding, and yard maintenance',
     icon: '🌿',
-    suggestedRateKobo: 400000, // ₦4,000/day
+    verificationTier: 'standard',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 400000, // ₦4,000
   },
   {
-    id: 'cat_domestic',
-    name: 'Domestic Assistance',
-    description: 'Cooking support, kitchen help, and day assistance',
-    icon: '🍳',
-    suggestedRateKobo: 450000, // ₦4,500/day
-  },
-  {
-    id: 'cat_construction',
-    name: 'General & Site Labour',
-    description: 'Manual site support, carrying, and masonry assistance',
-    icon: '🧱',
-    suggestedRateKobo: 600000, // ₦6,000/day
+    id: 'cat_waste',
+    name: 'Waste Removal & Clearing',
+    description: 'Debris clearing, trash disposal, and compound clearing',
+    icon: '🗑️',
+    verificationTier: 'standard',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 400000, // ₦4,000
   },
   {
     id: 'cat_carwash',
     name: 'Car Washing',
     description: 'Vehicle interior and exterior mobile wash',
     icon: '🚗',
-    suggestedRateKobo: 250000, // ₦2,500/wash
+    verificationTier: 'standard',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 250000, // ₦2,500
   },
   {
     id: 'cat_errands',
-    name: 'Errands & Dispatch',
+    name: 'Errands & Grocery Runs',
     description: 'Market shopping, package delivery, and queue assistance',
     icon: '🛵',
-    suggestedRateKobo: 300000, // ₦3,000/errand
+    verificationTier: 'standard',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 300000, // ₦3,000
+  },
+  {
+    id: 'cat_events',
+    name: 'Event Setup & Ushering',
+    description: 'Canopy setup, chair arrangement, and event support',
+    icon: '🎪',
+    verificationTier: 'standard',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 350000, // ₦3,500
+  },
+  {
+    id: 'cat_painting',
+    name: 'Painting & Surface Prep',
+    description: 'Interior and exterior wall painting and sanding',
+    icon: '🎨',
+    verificationTier: 'standard',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 500000, // ₦5,000
+  },
+  {
+    id: 'cat_carpentry_repairs',
+    name: 'Carpentry Repairs & Assembly',
+    description: 'Furniture assembly, hinge repairs, and wooden fixture fitting',
+    icon: '🪚',
+    verificationTier: 'standard',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 450000, // ₦4,500
+  },
+  {
+    id: 'cat_masonry',
+    name: 'Masonry & Plastering Assistance',
+    description: 'Brickwork assistance, mortar mixing, and surface patching',
+    icon: '🧱',
+    verificationTier: 'standard',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 550000, // ₦5,500
+  },
+  {
+    id: 'cat_tiling',
+    name: 'Tiling Assistance',
+    description: 'Tile cutting assistance, grouting, and cleanup',
+    icon: '📐',
+    verificationTier: 'standard',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 500000, // ₦5,000
+  },
+  {
+    id: 'cat_roofing',
+    name: 'Roofing & Gutter Maintenance',
+    description: 'Gutter clearing, leak patching, and roof inspection',
+    icon: '🏠',
+    verificationTier: 'standard',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 600000, // ₦6,000
+  },
+  {
+    id: 'cat_welding',
+    name: 'Welding & Metal Fabrication Support',
+    description: 'Gate repairs, burglar bar welding, and grinder assistance',
+    icon: '⚡',
+    verificationTier: 'standard',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 550000, // ₦5,500
+  },
+  {
+    id: 'cat_gen_assist',
+    name: 'Generator Servicing Assistance',
+    description: 'Oil changes, spark plug cleaning, and general servicing helper',
+    icon: '⚙️',
+    verificationTier: 'standard',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 450000, // ₦4,500
+  },
+
+  // --- Care Tier (5 Categories) ---
+  {
+    id: 'cat_childcare',
+    name: 'Childcare / Babysitting',
+    description: 'Attentive, vetted in-home child supervision and care',
+    icon: '👶',
+    verificationTier: 'care',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 400000, // ₦4,000
+  },
+  {
+    id: 'cat_elderly_care',
+    name: 'Elderly Care & Companion',
+    description: 'Respectful senior companionship, mobility support, and feeding assistance',
+    icon: '👵',
+    verificationTier: 'care',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 500000, // ₦5,000
+  },
+  {
+    id: 'cat_special_needs',
+    name: 'Special Needs Support',
+    description: 'Patient, dedicated care assistance for special needs family members',
+    icon: '🤝',
+    verificationTier: 'care',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 600000, // ₦6,000
+  },
+  {
+    id: 'cat_post_op',
+    name: 'Post-Operative & Convalescent Care',
+    description: 'Non-clinical home recovery support, meal service, and rest assistance',
+    icon: '🩺',
+    verificationTier: 'care',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 550000, // ₦5,500
+  },
+  {
+    id: 'cat_pet_care',
+    name: 'Pet Sitting & Dog Walking',
+    description: 'Pet feeding, walking, grooming support, and daytime supervision',
+    icon: '🐕',
+    verificationTier: 'care',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 300000, // ₦3,000
+  },
+
+  // --- Technical Trade Tier (6 Categories) ---
+  {
+    id: 'cat_electrical',
+    name: 'Electrical Installation & Repair',
+    description: 'Fault tracing, wiring, socket replacements, and DB panel repairs',
+    icon: '💡',
+    verificationTier: 'technical_trade',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 750000, // ₦7,500
+  },
+  {
+    id: 'cat_plumbing',
+    name: 'Plumbing & Pipefitting',
+    description: 'Pipe leaks, toilet fixture repair, pumping machine, and drainage clearing',
+    icon: '🔧',
+    verificationTier: 'technical_trade',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 700000, // ₦7,000
+  },
+  {
+    id: 'cat_ac_repair',
+    name: 'AC & Refrigeration Servicing',
+    description: 'Air conditioner gas refill, compressor checks, and deep cooling servicing',
+    icon: '❄️',
+    verificationTier: 'technical_trade',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 800000, // ₦8,000
+  },
+  {
+    id: 'cat_solar',
+    name: 'Solar Inverter & Battery Installation',
+    description: 'Inverter configuration, solar panel mounting, and lithium battery setups',
+    icon: '☀️',
+    verificationTier: 'technical_trade',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 1000000, // ₦10,000
+  },
+  {
+    id: 'cat_gen_overhaul',
+    name: 'Generator Mechanical Overhaul',
+    description: 'Heavy generator ring replacement, carburetor tuning, and engine overhauls',
+    icon: '🔩',
+    verificationTier: 'technical_trade',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 850000, // ₦8,500
+  },
+  {
+    id: 'cat_cctv',
+    name: 'CCTV & Security System Installation',
+    description: 'IP camera cabling, DVR/NVR configuration, and remote feed setup',
+    icon: '📹',
+    verificationTier: 'technical_trade',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 900000, // ₦9,000
   },
 ];
 
@@ -925,6 +1145,78 @@ export const ApiService = {
     reason?: string
   ) {
     return await verificationProvider.reviewSubmission(adminId, verificationId, action, reason);
+  },
+
+  // Tiered Verification Methods (§B, §C)
+  validateCareReferences(references: CareReferenceInput[]) {
+    return VerificationService.validateCareReferences(references);
+  },
+
+  async submitCareVerification(
+    userId: string,
+    data: CareVerificationSubmissionData
+  ): Promise<VerificationSubmissionResult> {
+    return await verificationProvider.submitCareVerification(userId, data);
+  },
+
+  async submitTechnicalVerification(
+    userId: string,
+    data: TechnicalVerificationSubmissionData
+  ): Promise<VerificationSubmissionResult> {
+    return await verificationProvider.submitTechnicalVerification(userId, data);
+  },
+
+  getUserCategoryVerification(userId: string, categoryId: string) {
+    return verificationProvider.getUserCategoryVerification(userId, categoryId);
+  },
+
+  // Category Safeguards & Bounds (§G, §B.2, §B.3)
+  validateCategoryWageBounds(
+    proposedWageKobo: number,
+    category: { min_pay_kobo?: number | null; max_pay_kobo?: number | null; name: string }
+  ) {
+    return JobService.validateCategoryWageBounds(proposedWageKobo, category);
+  },
+
+  getCategorySafetyConfig(categoryName: string, tier: VerificationTier): CategorySafetyConfig {
+    return JobService.getCategorySafetyConfig(categoryName, tier);
+  },
+
+  async setWorkerCategories(
+    categories: Array<{ categoryId: string; indicativeRateKobo?: number }>,
+    maxCategories: number = 5
+  ): Promise<void> {
+    await profileService.setWorkerCategories(
+      categories.map((c) => ({
+        categoryId: c.categoryId,
+        indicativeRateKobo: c.indicativeRateKobo ?? 0,
+      })),
+      maxCategories
+    );
+  },
+
+  async updateEmergencyContact(contact: EmergencyContact): Promise<void> {
+    await profileService.updateEmergencyContact(contact);
+  },
+
+  isFirstBookingBetween(employerId: string, workerId: string): boolean {
+    for (const job of createdJobsStore.values()) {
+      if (
+        job.employerId === employerId &&
+        job.hiredWorkerId === workerId &&
+        job.status === 'completed'
+      ) {
+        return false;
+      }
+    }
+    return true;
+  },
+
+  recordSafetyCheckIn(jobId: string, status: 'safe' | 'distress'): { success: boolean; timestamp: string } {
+    return {
+      success: true,
+      timestamp: new Date().toISOString(),
+    };
   },
 
   // Job Creation & Section 29 Pricing (§29, §30, §32)

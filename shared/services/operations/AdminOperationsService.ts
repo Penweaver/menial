@@ -8,6 +8,8 @@
  */
 
 import type { IDatabaseClient } from '../admin/AdminService';
+import type { VerificationTier, TechnicalSubStatus } from '../../types/enums';
+import type { CareReferenceContact } from '../../types/database';
 
 export interface OverviewMetricsData {
   metrics: {
@@ -103,9 +105,11 @@ export class AdminOperationsService {
 
   /**
    * Fetches server-side paginated verification queue items (§61, §91).
+   * Supports filtering by verification tier: 'standard', 'care', 'technical_trade' (§B, §C).
    */
   public async getVerificationQueue(params?: {
     status?: string;
+    tier?: string;
     limit?: number;
     offset?: number;
   }): Promise<PaginatedResult<Record<string, unknown>>> {
@@ -113,6 +117,7 @@ export class AdminOperationsService {
       'get_admin_paginated_verifications',
       {
         p_status: params?.status || 'pending',
+        p_tier: params?.tier || null,
         p_limit: params?.limit || 25,
         p_offset: params?.offset || 0,
       }
@@ -123,6 +128,29 @@ export class AdminOperationsService {
     }
 
     return data;
+  }
+
+  /**
+   * Administrative decision on a tiered verification submission (§B, §C).
+   */
+  public async reviewTieredVerification(params: {
+    verificationId: string;
+    action: 'approve' | 'reject' | 'request_info';
+    subStatus?: TechnicalSubStatus;
+    references?: CareReferenceContact[];
+    rejectionReason?: string;
+  }): Promise<void> {
+    const { error } = await this.db.rpc('review_tiered_verification', {
+      p_verification_id: params.verificationId,
+      p_action: params.action,
+      p_sub_status: params.subStatus || null,
+      p_references: params.references ? JSON.stringify(params.references) : null,
+      p_rejection_reason: params.rejectionReason || null,
+    });
+
+    if (error) {
+      throw new Error(`Failed to review tiered verification: ${error.message}`);
+    }
   }
 
   /**
@@ -290,6 +318,23 @@ export class AdminOperationsService {
 
     if (error) {
       throw new Error(`Failed to resolve safety report: ${error.message}`);
+    }
+  }
+
+  /**
+   * Acknowledges an active emergency SOS incident and silences audible alarm (§B.2, §L).
+   */
+  public async acknowledgeSafetySos(params: {
+    reportId: string;
+    acknowledgementNote?: string;
+  }): Promise<void> {
+    const { error } = await this.db.rpc('acknowledge_safety_sos', {
+      p_report_id: params.reportId,
+      p_acknowledgement_note: params.acknowledgementNote || null,
+    });
+
+    if (error) {
+      throw new Error(`Failed to acknowledge safety SOS: ${error.message}`);
     }
   }
 

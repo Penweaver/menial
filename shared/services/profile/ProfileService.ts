@@ -1,11 +1,13 @@
 /**
  * Menial Platform - Profile & Worker Discovery Service
  * 
- * Manages marketplace profiles and proximity-based worker discovery.
- * Reference: menial-master-spec-v2.md (§21, §22, §24, §27, §28, §34)
+ * Manages marketplace profiles, multi-category selections (§I),
+ * emergency contacts (§L), and proximity-based worker discovery with tiered verification (§B, §34).
+ * Reference: menial-master-spec-v2.md (§21, §22, §24, §27, §28, §34) & Spec Addendum v3 (§B, §I, §L)
  */
 
-import type { VerificationStatus } from '../../types/enums';
+import type { VerificationStatus, VerificationTier, TechnicalSubStatus } from '../../types/enums';
+import type { EmergencyContact } from '../../types/database';
 import type { IDatabaseClient } from '../admin/AdminService';
 
 export interface CompleteWorkerOnboardingParams {
@@ -17,6 +19,11 @@ export interface CompleteWorkerOnboardingParams {
   longitude?: number;
 }
 
+export interface WorkerCategorySelection {
+  categoryId: string;
+  indicativeRateKobo: number;
+}
+
 export interface CompleteEmployerOnboardingParams {
   companyName?: string;
   isBusiness: boolean;
@@ -24,10 +31,12 @@ export interface CompleteEmployerOnboardingParams {
 
 export interface WorkerDiscoveryQuery {
   categoryId: string;
+  categoryTier?: VerificationTier;
   latitude: number;
   longitude: number;
   radiusKm?: number; // default 15km
   verifiedOnly?: boolean; // default true for consumer discovery
+  tradeTestOnly?: boolean; // employer filter for certified trades (§B.3)
 }
 
 export interface DiscoveredWorker {
@@ -41,6 +50,11 @@ export interface DiscoveredWorker {
   completedJobsCount: number;
   verificationStatus: VerificationStatus;
   distanceKm: number;
+  tierStatus?: {
+    tier: VerificationTier;
+    status: VerificationStatus;
+    subStatus?: TechnicalSubStatus;
+  };
 }
 
 export class ProfileService {
@@ -67,6 +81,48 @@ export class ProfileService {
 
     if (error) {
       throw new Error(`Failed to complete worker onboarding: ${error.message}`);
+    }
+  }
+
+  /**
+   * Sets multi-category selection with individual indicative rates (§I).
+   * Enforces platform cap (default: 5 categories).
+   */
+  public async setWorkerCategories(
+    categories: WorkerCategorySelection[],
+    maxCap: number = 5
+  ): Promise<void> {
+    if (categories.length > maxCap) {
+      throw new Error(`Category limit exceeded: Maximum ${maxCap} categories allowed (attempted ${categories.length}) (§I).`);
+    }
+
+    const { error } = await this.db.rpc('set_worker_categories', {
+      p_categories: categories.map((c) => ({
+        category_id: c.categoryId,
+        indicative_rate_kobo: c.indicativeRateKobo,
+      })),
+    });
+
+    if (error) {
+      throw new Error(`Failed to update worker categories: ${error.message}`);
+    }
+  }
+
+  /**
+   * Updates user emergency contact details (§L).
+   */
+  public async updateEmergencyContact(contact: EmergencyContact): Promise<void> {
+    const cleanedPhone = contact.phone.replace(/\D/g, '');
+    if (cleanedPhone.length < 10) {
+      throw new Error('Valid emergency contact phone number required (§L).');
+    }
+
+    const { error } = await this.db.rpc('update_user_emergency_contact', {
+      p_emergency_contact: contact,
+    });
+
+    if (error) {
+      throw new Error(`Failed to update emergency contact: ${error.message}`);
     }
   }
 
@@ -125,13 +181,14 @@ export class ProfileService {
   }
 
   /**
-   * Evaluates worker suitability for on-demand discovery (§28, §34):
+   * Evaluates worker suitability for on-demand discovery (§28, §34, §B):
    * - Must be active and available (`is_available = true`)
    * - Must match target category
    * - Must be within service radius
-   * - Verification status filter
+   * - Must meet category tier verification requirements (Care -> CARE_VERIFIED; Technical Trade -> TECHNICAL_VERIFIED)
+   * - Optional Trade Test certification filter
    * 
-   * Returns sorted list: nearest first, breaking ties by rating.
+   * Returns sorted list: nearest distance first, breaking ties by rating.
    */
   public filterAndRankWorkers(
     workers: Array<{
@@ -148,6 +205,11 @@ export class ProfileService {
       latitude: number | null;
       longitude: number | null;
       categoryIds: string[];
+      categoryVerifications?: Record<string, {
+        tier: VerificationTier;
+        status: VerificationStatus;
+        subStatus?: TechnicalSubStatus;
+      }>;
     }>,
     query: WorkerDiscoveryQuery
   ): DiscoveredWorker[] {
@@ -163,8 +225,26 @@ export class ProfileService {
       // 2. Category match (§28)
       if (!worker.categoryIds.includes(query.categoryId)) continue;
 
-      // 3. Verification filter (§25)
-      if (verifiedOnly && worker.verificationStatus !== 'verified') continue;
+      // 3. Category Tiered Verification Check (§B.2, §B.3)
+      const catVerification = worker.categoryVerifications?.[query.categoryId];
+      if (query.categoryTier === 'care') {
+        if (!catVerification || catVerification.status !== 'verified') {
+          // Cannot appear in Care discovery without CARE_VERIFIED
+          continue;
+        }
+      } else if (query.categoryTier === 'technical_trade') {
+        if (!catVerification || catVerification.status !== 'verified') {
+          // Cannot appear in Technical Trade discovery without TECHNICAL_VERIFIED
+          continue;
+        }
+        if (query.tradeTestOnly && catVerification.subStatus !== 'trade_test_certified') {
+          // Employer specifically filtering for certified master artisans
+          continue;
+        }
+      } else if (verifiedOnly && worker.verificationStatus !== 'verified') {
+        // Standard verification check
+        continue;
+      }
 
       // 4. Proximity calculation (§28)
       if (worker.latitude == null || worker.longitude == null) continue;
@@ -190,6 +270,7 @@ export class ProfileService {
         completedJobsCount: worker.completedJobsCount,
         verificationStatus: worker.verificationStatus,
         distanceKm: distance,
+        tierStatus: catVerification,
       });
     }
 

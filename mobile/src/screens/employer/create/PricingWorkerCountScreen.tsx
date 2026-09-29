@@ -7,10 +7,11 @@ import { Button } from '../../../components/common/Button';
 import { Card } from '../../../components/common/Card';
 import { Badge } from '../../../components/common/Badge';
 import { useJobCreation } from '../../../context/JobCreationContext';
+import { ApiService } from '../../../services/api';
 
 interface PricingWorkerCountScreenProps {
   onNext: () => void;
-  onBack: () => void;
+  onBack?: () => void;
 }
 
 export const PricingWorkerCountScreen: React.FC<PricingWorkerCountScreenProps> = ({
@@ -24,6 +25,16 @@ export const PricingWorkerCountScreen: React.FC<PricingWorkerCountScreenProps> =
     draft.workerPayKobo ? String(Math.floor(draft.workerPayKobo / 100)) : '3500'
   );
   const [error, setError] = useState<string | null>(null);
+
+  const boundCheck = React.useMemo(() => {
+    const parsed = parseInt(rateNaira || '0', 10);
+    if (isNaN(parsed) || parsed <= 0) return null;
+    return ApiService.validateCategoryWageBounds(parsed * 100, {
+      min_pay_kobo: draft.minPayKobo,
+      max_pay_kobo: draft.maxPayKobo,
+      name: draft.categoryName || 'Category',
+    });
+  }, [rateNaira, draft.minPayKobo, draft.maxPayKobo, draft.categoryName]);
 
   const incrementWorkers = () => {
     if (workerCount < 10) {
@@ -57,9 +68,25 @@ export const PricingWorkerCountScreen: React.FC<PricingWorkerCountScreenProps> =
       return;
     }
 
+    const workerPayKobo = parsed * 100;
+
+    // Wage bounds enforcement (§G)
+    const bounds = ApiService.validateCategoryWageBounds(workerPayKobo, {
+      min_pay_kobo: draft.minPayKobo,
+      max_pay_kobo: draft.maxPayKobo,
+      name: draft.categoryName || 'Category',
+    });
+
+    // Hard block on minimum floor
+    if (bounds.isBelowFloor) {
+      setError(bounds.error || `Proposed wage is below the minimum category floor of ${formatKoboToNaira(draft.minPayKobo || 0)} (§G).`);
+      return;
+    }
+
     updateDraft({
       numberOfWorkers: workerCount,
-      workerPayKobo: parsed * 100,
+      workerPayKobo,
+      aboveCategoryCeiling: bounds.isAboveCeiling,
     });
 
     onNext();
@@ -140,6 +167,20 @@ export const PricingWorkerCountScreen: React.FC<PricingWorkerCountScreenProps> =
             keyboardType="number-pad"
             style={styles.payInput}
           />
+
+          {draft.minPayKobo != null && (
+            <Text style={styles.boundsHintText}>
+              Category Floor: {formatKoboToNaira(draft.minPayKobo)}
+              {draft.maxPayKobo ? ` • Typical Ceiling: ${formatKoboToNaira(draft.maxPayKobo)}` : ''}
+            </Text>
+          )}
+
+          {boundCheck?.isAboveCeiling && boundCheck.warning ? (
+            <View style={styles.ceilingWarningBanner}>
+              <Text style={styles.ceilingWarningIcon}>⚠️</Text>
+              <Text style={styles.ceilingWarningText}>{boundCheck.warning}</Text>
+            </View>
+          ) : null}
 
           <View style={styles.perWorkerReminder}>
             <Text style={styles.perWorkerReminderText}>
@@ -399,5 +440,36 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     marginTop: Spacing.xs,
+  },
+  boundsHintText: {
+    ...Typography.scale.bodySm,
+    color: Colors.textSecondary,
+    fontSize: 11,
+    marginTop: 4,
+    marginBottom: Spacing.xs,
+  },
+  ceilingWarningBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: Colors.tertiaryContainer,
+    borderWidth: 1,
+    borderColor: Colors.tertiary,
+    borderRadius: Radii.md,
+    padding: Spacing.sm,
+    marginTop: Spacing.xs,
+    marginBottom: Spacing.xs,
+  },
+  ceilingWarningIcon: {
+    fontSize: 14,
+    marginRight: 6,
+    marginTop: 1,
+  },
+  ceilingWarningText: {
+    ...Typography.scale.bodySm,
+    color: Colors.tertiaryText,
+    flex: 1,
+    fontSize: 11,
+    lineHeight: 16,
+    fontWeight: '500',
   },
 });

@@ -2,8 +2,8 @@
  * Menial Platform - Prembly (Identitypass) KYC & NIN Verification Adapter
  * 
  * Production adapter for Nigerian National Identity Number (NIN) verification
- * with strict NDPA data privacy masking (§80).
- * Reference: menial-master-spec-v2.md (§22, §25, §80)
+ * with strict NDPA data privacy masking (§80) and tiered verification support (§B).
+ * Reference: menial-master-spec-v2.md (§22, §25, §80) & Spec Addendum v3 (§B)
  */
 
 import type {
@@ -11,7 +11,12 @@ import type {
   VerificationSubmissionData,
   VerificationSubmissionResult,
   VerificationReviewResult,
+  CareVerificationSubmissionData,
+  TechnicalVerificationSubmissionData,
+  ReviewTieredSubmissionData,
+  CareReferenceInput,
 } from '../../services/verification/VerificationService';
+import { VerificationService } from '../../services/verification/VerificationService';
 import type { VerificationAction } from '../../types/enums';
 import type { ConnectionTestResult } from '../types';
 
@@ -90,25 +95,13 @@ export class PremblyAdapter implements IVerificationProvider {
     documentType: string,
     idNumber: string
   ): { valid: boolean; maskedNumber: string; error?: string } {
-    const clean = idNumber.replace(/\D/g, '');
+    return VerificationService.validateDocumentNumber(documentType, idNumber);
+  }
 
-    if (documentType === 'nin') {
-      if (clean.length !== 11) {
-        return {
-          valid: false,
-          maskedNumber: '',
-          error: 'National Identity Number (NIN) must be exactly 11 digits (§80).',
-        };
-      }
-      // NDPA Masking: *******8901
-      const masked = `*******${clean.slice(-4)}`;
-      return { valid: true, maskedNumber: masked };
-    }
-
-    return {
-      valid: clean.length >= 6,
-      maskedNumber: clean.length > 4 ? `****${clean.slice(-4)}` : clean,
-    };
+  public validateCareReferences(
+    references: CareReferenceInput[]
+  ): { valid: boolean; error?: string } {
+    return VerificationService.validateCareReferences(references);
   }
 
   public async submitVerification(
@@ -120,6 +113,65 @@ export class PremblyAdapter implements IVerificationProvider {
       success: true,
       verificationId,
       status: 'pending',
+      tier: 'standard',
+    };
+  }
+
+  public async submitCareVerification(
+    userId: string,
+    data: CareVerificationSubmissionData
+  ): Promise<VerificationSubmissionResult> {
+    // 1. Enforce minimum two references (§B.2)
+    const refValidation = this.validateCareReferences(data.references);
+    if (!refValidation.valid) {
+      return {
+        success: false,
+        verificationId: '',
+        status: 'unverified',
+        tier: 'care',
+        error: refValidation.error,
+      };
+    }
+
+    // 2. Enforce Police Certificate (§B.2)
+    if (!data.policeCertUrl || data.policeCertUrl.trim().length === 0) {
+      return {
+        success: false,
+        verificationId: '',
+        status: 'unverified',
+        tier: 'care',
+        error: 'Police Character Certificate is required for Care verification (§B.2).',
+      };
+    }
+
+    return {
+      success: true,
+      verificationId: `care_prembly_${Date.now()}`,
+      status: 'pending',
+      tier: 'care',
+    };
+  }
+
+  public async submitTechnicalVerification(
+    userId: string,
+    data: TechnicalVerificationSubmissionData
+  ): Promise<VerificationSubmissionResult> {
+    const techValidation = VerificationService.validateTechnicalSubmission(data);
+    if (!techValidation.valid) {
+      return {
+        success: false,
+        verificationId: '',
+        status: 'unverified',
+        tier: 'technical_trade',
+        error: techValidation.error,
+      };
+    }
+
+    return {
+      success: true,
+      verificationId: `tech_prembly_${Date.now()}`,
+      status: 'pending',
+      tier: 'technical_trade',
     };
   }
 
@@ -132,6 +184,17 @@ export class PremblyAdapter implements IVerificationProvider {
     return {
       success: true,
       status: action === 'approve' ? 'verified' : 'rejected',
+      reviewedAt: new Date().toISOString(),
+    };
+  }
+
+  public async reviewTieredSubmission(
+    data: ReviewTieredSubmissionData
+  ): Promise<VerificationReviewResult> {
+    return {
+      success: true,
+      status: data.action === 'approve' ? 'verified' : 'rejected',
+      subStatus: data.subStatus,
       reviewedAt: new Date().toISOString(),
     };
   }

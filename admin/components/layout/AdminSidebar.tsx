@@ -25,6 +25,7 @@ import {
   Lock,
   LockOpen,
   ChevronRight,
+  X,
 } from 'lucide-react';
 
 interface NavItem {
@@ -41,7 +42,12 @@ interface NavSection {
   items: NavItem[];
 }
 
-export function AdminSidebar() {
+export interface AdminSidebarProps {
+  mobileOpen?: boolean;
+  onCloseMobile?: () => void;
+}
+
+export function AdminSidebar({ mobileOpen = false, onCloseMobile }: AdminSidebarProps = {}) {
   const pathname = usePathname();
   const router = useRouter();
   const { adminContext } = useAdminAuth();
@@ -173,6 +179,7 @@ export function AdminSidebar() {
     .filter((section) => section.items.length > 0);
 
   const handleNavClick = (e: React.MouseEvent, item: NavItem) => {
+    onCloseMobile?.();
     // If route requires step-up and session is not yet step-up verified
     const check = canAccessAdminRoute(adminContext, item.href);
     if (!check.allowed && check.reason?.includes('MFA step-up challenge required')) {
@@ -191,7 +198,39 @@ export function AdminSidebar() {
 
   return (
     <>
-      <aside className="w-64 bg-white border-r border-surface-border flex flex-col shrink-0 min-h-[calc(100vh-56px)] select-none">
+      {/* Mobile Drawer Backdrop Overlay */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 bg-surface-dark/50 backdrop-blur-xs z-40 lg:hidden"
+          onClick={onCloseMobile}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Responsive Sidebar Drawer */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-surface-border flex flex-col shrink-0 min-h-screen select-none transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 lg:w-64 lg:min-h-[calc(100vh-56px)] lg:z-auto ${
+          mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
+        }`}
+      >
+        {/* Mobile Drawer Header with Close Button */}
+        <div className="flex items-center justify-between p-4 border-b border-surface-border lg:hidden">
+          <div className="flex items-center gap-2">
+            <img src="/logo.png" alt="menial" className="h-5 w-auto object-contain" />
+            <span className="bg-primary text-white text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">
+              Admin Ops
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={onCloseMobile}
+            className="p-1.5 rounded-lg text-surface-muted hover:text-surface-dark hover:bg-surface-canvas transition-colors"
+            aria-label="Close menu"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
         {/* Navigation Section List */}
         <div className="flex-1 py-4 px-3 space-y-6 overflow-y-auto">
           {visibleSections.map((section) => (

@@ -6,6 +6,7 @@ import { Button } from '../../../components/common/Button';
 import { Card } from '../../../components/common/Card';
 import { Badge } from '../../../components/common/Badge';
 import { useJobCreation } from '../../../context/JobCreationContext';
+import { ApiService } from '../../../services/api';
 
 interface ReviewPublishScreenProps {
   onSuccess: (jobId: string, publicJobId: string) => void;
@@ -18,6 +19,18 @@ export const ReviewPublishScreen: React.FC<ReviewPublishScreenProps> = ({
 }) => {
   const { draft, pricing, platformFeePercent, submitAndPublishJob, isLoading } = useJobCreation();
   const [error, setError] = useState<string | null>(null);
+
+  const isCare = draft.categoryTier === 'care';
+  const isTechnical =
+    draft.categoryTier === 'technical_trade' || (draft.categoryTier as string) === 'technical';
+
+  const safetyConfig = React.useMemo(() => {
+    if (!draft.categoryTier || draft.categoryTier === 'standard') return null;
+    return ApiService.getCategorySafetyConfig(
+      draft.categoryName || 'General',
+      draft.categoryTier
+    );
+  }, [draft.categoryName, draft.categoryTier]);
 
   const handlePublish = async () => {
     setError(null);
@@ -92,6 +105,60 @@ export const ReviewPublishScreen: React.FC<ReviewPublishScreenProps> = ({
             </View>
           </View>
         </Card>
+
+        {/* Category Safety Safeguards Card (§B.2, §B.3, §L) */}
+        {safetyConfig && (
+          <Card style={styles.safeguardCard}>
+            <View style={styles.safeguardHeader}>
+              <Text style={styles.safeguardIcon}>{isCare ? '🛡️' : '🔧'}</Text>
+              <View style={styles.safeguardTitleGroup}>
+                <Text style={styles.safeguardTitle}>
+                  {isCare ? 'Care Safeguard Notice (§B.2)' : 'Technical Trade Safeguards (§B.3)'}
+                </Text>
+                <Text style={styles.safeguardSub}>
+                  {isCare ? 'Vulnerable individual protection protocol' : 'Artisan liability & site isolation protocol'}
+                </Text>
+              </View>
+            </View>
+
+            {isCare && safetyConfig.requiresFirstBookingNotice && (
+              <View style={styles.safeguardNoticeBox}>
+                <Text style={styles.safeguardNoticeHeading}>Adult Presence Safeguard</Text>
+                <Text style={styles.safeguardNoticeText}>
+                  {safetyConfig.firstBookingNoticeText}
+                </Text>
+                <View style={styles.checkInRow}>
+                  <Text style={styles.checkInIcon}>⏱️</Text>
+                  <Text style={styles.checkInText}>
+                    Active Monitoring: On-duty safety check-ins occur at {safetyConfig.elevatedCheckInThresholdHours}-hour intervals (§B.2).
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            {isTechnical && (
+              <View style={styles.technicalSafetyBox}>
+                {safetyConfig.disclaimer && (
+                  <View style={styles.disclaimerBox}>
+                    <Text style={styles.disclaimerText}>{safetyConfig.disclaimer}</Text>
+                  </View>
+                )}
+
+                {safetyConfig.preJobChecklist && safetyConfig.preJobChecklist.length > 0 && (
+                  <View style={styles.checklistContainer}>
+                    <Text style={styles.checklistHeading}>Mandatory Pre-Job Safety Checks:</Text>
+                    {safetyConfig.preJobChecklist.map((item, index) => (
+                      <View key={index} style={styles.checklistItemRow}>
+                        <Text style={styles.checklistBullet}>✓</Text>
+                        <Text style={styles.checklistItemText}>{item}</Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </View>
+            )}
+          </Card>
+        )}
 
         {/* 2. Section 29 Financial & Escrow Summary */}
         <Card style={styles.escrowCard}>
@@ -336,5 +403,117 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     marginTop: Spacing.xs,
+  },
+  safeguardCard: {
+    marginBottom: Spacing.lg,
+    backgroundColor: Colors.surface,
+    borderWidth: 1.5,
+    borderColor: Colors.secondary,
+  },
+  safeguardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Spacing.sm,
+  },
+  safeguardIcon: {
+    fontSize: 24,
+    marginRight: Spacing.sm,
+  },
+  safeguardTitleGroup: {
+    flex: 1,
+  },
+  safeguardTitle: {
+    ...Typography.scale.headlineSm,
+    color: Colors.textPrimary,
+    fontSize: 15,
+  },
+  safeguardSub: {
+    ...Typography.scale.bodySm,
+    color: Colors.textSecondary,
+    fontSize: 11,
+  },
+  safeguardNoticeBox: {
+    backgroundColor: Colors.secondaryContainer,
+    borderRadius: Radii.md,
+    padding: Spacing.md,
+    marginTop: Spacing.xs,
+  },
+  safeguardNoticeHeading: {
+    ...Typography.scale.labelMd,
+    color: Colors.secondaryText,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  safeguardNoticeText: {
+    ...Typography.scale.bodySm,
+    color: Colors.secondaryText,
+    lineHeight: 18,
+    fontSize: 12,
+  },
+  checkInRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: Spacing.sm,
+    paddingTop: Spacing.xs,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(2, 132, 199, 0.2)',
+  },
+  checkInIcon: {
+    fontSize: 14,
+    marginRight: 6,
+  },
+  checkInText: {
+    ...Typography.scale.bodySm,
+    color: Colors.secondaryText,
+    fontWeight: '600',
+    fontSize: 11,
+  },
+  technicalSafetyBox: {
+    marginTop: Spacing.xs,
+  },
+  disclaimerBox: {
+    backgroundColor: Colors.surfaceSubtle,
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.primary,
+    padding: Spacing.sm,
+    borderRadius: Radii.sm,
+    marginBottom: Spacing.sm,
+  },
+  disclaimerText: {
+    ...Typography.scale.bodySm,
+    color: Colors.textSecondary,
+    fontStyle: 'italic',
+    lineHeight: 16,
+    fontSize: 11,
+  },
+  checklistContainer: {
+    backgroundColor: Colors.surfaceSubtle,
+    borderRadius: Radii.md,
+    padding: Spacing.md,
+  },
+  checklistHeading: {
+    ...Typography.scale.labelSm,
+    color: Colors.textPrimary,
+    fontWeight: '700',
+    marginBottom: Spacing.xs,
+  },
+  checklistItemRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginTop: 4,
+  },
+  checklistBullet: {
+    color: Colors.primary,
+    fontWeight: 'bold',
+    fontSize: 12,
+    marginRight: 6,
+    marginTop: 1,
+  },
+  checklistItemText: {
+    ...Typography.scale.bodySm,
+    color: Colors.textPrimary,
+    flex: 1,
+    fontSize: 11,
+    lineHeight: 16,
   },
 });

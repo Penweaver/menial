@@ -48,6 +48,16 @@ export type AdminPermissionKey =
 export type VerificationStatus = 'unverified' | 'pending' | 'verified' | 'rejected';
 
 /**
+ * Verification tiers grouping categories and onboarding requirements (§A, §B).
+ */
+export type VerificationTier = 'standard' | 'care' | 'technical_trade';
+
+/**
+ * Sub-status badge for technical trade verification (§B.3).
+ */
+export type TechnicalSubStatus = 'experience_verified' | 'trade_test_certified';
+
+/**
  * Actions that an admin can take on a verification submission.
  */
 export type VerificationAction = 'approve' | 'reject' | 'request_info';

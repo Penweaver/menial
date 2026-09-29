@@ -199,6 +199,20 @@ export class TrustSafetyService {
   }
 
   /**
+   * Explicitly acknowledges and silences an audible SOS alert in Admin/Superadmin dashboard (§L).
+   * Generates an immutable audit log entry.
+   */
+  public async acknowledgeSafetySos(reportId: string): Promise<void> {
+    const { error } = await this.db.rpc('acknowledge_safety_sos', {
+      p_report_id: reportId,
+    });
+
+    if (error) {
+      throw new Error(`Failed to acknowledge safety SOS: ${error.message}`);
+    }
+  }
+
+  /**
    * Sends a message within a job-scoped conversation (§48).
    * Enforces that chat becomes read-only once the job reaches terminal status.
    */

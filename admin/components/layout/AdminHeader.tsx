@@ -14,9 +14,14 @@ import {
   Lock,
   ShieldCheck,
   ExternalLink,
+  Menu,
 } from 'lucide-react';
 
-export function AdminHeader() {
+interface AdminHeaderProps {
+  onToggleMobileMenu?: () => void;
+}
+
+export function AdminHeader({ onToggleMobileMenu }: AdminHeaderProps = {}) {
   const router = useRouter();
   const { user, adminContext, signOut } = useAdminAuth();
   const [watTime, setWatTime] = useState<string>('');
@@ -60,7 +65,18 @@ export function AdminHeader() {
   return (
     <header className="bg-white sticky top-0 z-40 w-full px-6 py-2.5 min-h-[56px] shadow-xs border-b border-surface-border flex items-center justify-between">
       {/* Left Brand & Telemetry Cluster */}
-      <div className="flex items-center gap-5">
+      <div className="flex items-center gap-3 sm:gap-5">
+        {onToggleMobileMenu && (
+          <button
+            type="button"
+            onClick={onToggleMobileMenu}
+            className="lg:hidden p-2 -ml-2 rounded-xl text-surface-muted hover:text-surface-dark hover:bg-surface-canvas transition-colors"
+            aria-label="Toggle navigation drawer"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        )}
+
         <div className="flex items-center gap-2">
           <Link href="/admin/overview" className="flex items-center gap-2.5 group">
             <img src="/logo.png" alt="menial" className="h-6 w-auto object-contain" />
