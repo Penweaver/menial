@@ -614,7 +614,7 @@ export interface ServiceCategory {
   verificationTier?: VerificationTier;
   minPayKobo?: number | null;
   maxPayKobo?: number | null;
-  suggestedRateKobo: number;
+  suggestedRateKobo?: number | null;
 }
 
 // Master Spec & Addendum v3 Seed Categories (Exact mirror of database public.categories table — 32 Categories §26, §A)
@@ -760,7 +760,7 @@ export const SEED_CATEGORIES: ServiceCategory[] = [
     verificationTier: 'standard',
     minPayKobo: null,
     maxPayKobo: null,
-    suggestedRateKobo: 300000, // ₦3,000
+    suggestedRateKobo: null,
   },
   {
     id: 'cat_warehouse',
@@ -770,7 +770,7 @@ export const SEED_CATEGORIES: ServiceCategory[] = [
     verificationTier: 'standard',
     minPayKobo: null,
     maxPayKobo: null,
-    suggestedRateKobo: 500000, // ₦5,000
+    suggestedRateKobo: null,
   },
   {
     id: 'cat_landscaping',
@@ -780,7 +780,7 @@ export const SEED_CATEGORIES: ServiceCategory[] = [
     verificationTier: 'standard',
     minPayKobo: null,
     maxPayKobo: null,
-    suggestedRateKobo: 400000, // ₦4,000
+    suggestedRateKobo: null,
   },
   {
     id: 'cat_fumigation',
@@ -790,7 +790,7 @@ export const SEED_CATEGORIES: ServiceCategory[] = [
     verificationTier: 'standard',
     minPayKobo: null,
     maxPayKobo: null,
-    suggestedRateKobo: 450000, // ₦4,500
+    suggestedRateKobo: null,
   },
   {
     id: 'cat_tank_cleaning',
@@ -800,7 +800,7 @@ export const SEED_CATEGORIES: ServiceCategory[] = [
     verificationTier: 'standard',
     minPayKobo: null,
     maxPayKobo: null,
-    suggestedRateKobo: 500000, // ₦5,000
+    suggestedRateKobo: null,
   },
   {
     id: 'cat_generator',
@@ -810,7 +810,7 @@ export const SEED_CATEGORIES: ServiceCategory[] = [
     verificationTier: 'standard',
     minPayKobo: null,
     maxPayKobo: null,
-    suggestedRateKobo: 450000, // ₦4,500
+    suggestedRateKobo: null,
   },
   {
     id: 'cat_ushering',
@@ -820,7 +820,7 @@ export const SEED_CATEGORIES: ServiceCategory[] = [
     verificationTier: 'standard',
     minPayKobo: null,
     maxPayKobo: null,
-    suggestedRateKobo: 350000, // ₦3,500
+    suggestedRateKobo: null,
   },
   {
     id: 'cat_waitstaff',
@@ -830,7 +830,7 @@ export const SEED_CATEGORIES: ServiceCategory[] = [
     verificationTier: 'standard',
     minPayKobo: null,
     maxPayKobo: null,
-    suggestedRateKobo: 350000, // ₦3,500
+    suggestedRateKobo: null,
   },
   {
     id: 'cat_setup_teardown',
@@ -840,7 +840,7 @@ export const SEED_CATEGORIES: ServiceCategory[] = [
     verificationTier: 'standard',
     minPayKobo: null,
     maxPayKobo: null,
-    suggestedRateKobo: 400000, // ₦4,000
+    suggestedRateKobo: null,
   },
   {
     id: 'cat_gear_loading',
@@ -850,7 +850,7 @@ export const SEED_CATEGORIES: ServiceCategory[] = [
     verificationTier: 'standard',
     minPayKobo: null,
     maxPayKobo: null,
-    suggestedRateKobo: 450000, // ₦4,500
+    suggestedRateKobo: null,
   },
   {
     id: 'cat_retail_support',
@@ -860,7 +860,7 @@ export const SEED_CATEGORIES: ServiceCategory[] = [
     verificationTier: 'standard',
     minPayKobo: null,
     maxPayKobo: null,
-    suggestedRateKobo: 350000, // ₦3,500
+    suggestedRateKobo: null,
   },
   {
     id: 'cat_farming',
@@ -870,7 +870,7 @@ export const SEED_CATEGORIES: ServiceCategory[] = [
     verificationTier: 'standard',
     minPayKobo: null,
     maxPayKobo: null,
-    suggestedRateKobo: 350000, // ₦3,500
+    suggestedRateKobo: null,
   },
 
   // --- Addendum Section A.2 Enhanced Tier — Care Services (2 Categories) ---
@@ -882,7 +882,7 @@ export const SEED_CATEGORIES: ServiceCategory[] = [
     verificationTier: 'care',
     minPayKobo: null,
     maxPayKobo: null,
-    suggestedRateKobo: 400000, // ₦4,000
+    suggestedRateKobo: null,
   },
   {
     id: 'cat_elderly_care',
@@ -892,7 +892,7 @@ export const SEED_CATEGORIES: ServiceCategory[] = [
     verificationTier: 'care',
     minPayKobo: null,
     maxPayKobo: null,
-    suggestedRateKobo: 500000, // ₦5,000
+    suggestedRateKobo: null,
   },
 
   // --- Addendum Section A.3 Enhanced Tier — Technical Trades (5 Categories) ---
@@ -904,7 +904,7 @@ export const SEED_CATEGORIES: ServiceCategory[] = [
     verificationTier: 'technical_trade',
     minPayKobo: null,
     maxPayKobo: null,
-    suggestedRateKobo: 750000, // ₦7,500
+    suggestedRateKobo: null,
   },
   {
     id: 'cat_plumbing',
@@ -914,7 +914,7 @@ export const SEED_CATEGORIES: ServiceCategory[] = [
     verificationTier: 'technical_trade',
     minPayKobo: null,
     maxPayKobo: null,
-    suggestedRateKobo: 700000, // ₦7,000
+    suggestedRateKobo: null,
   },
   {
     id: 'cat_ac_repair',
@@ -924,7 +924,7 @@ export const SEED_CATEGORIES: ServiceCategory[] = [
     verificationTier: 'technical_trade',
     minPayKobo: null,
     maxPayKobo: null,
-    suggestedRateKobo: 800000, // ₦8,000
+    suggestedRateKobo: null,
   },
   {
     id: 'cat_welding',
@@ -934,7 +934,7 @@ export const SEED_CATEGORIES: ServiceCategory[] = [
     verificationTier: 'technical_trade',
     minPayKobo: null,
     maxPayKobo: null,
-    suggestedRateKobo: 700000, // ₦7,000
+    suggestedRateKobo: null,
   },
   {
     id: 'cat_carpentry',
@@ -944,7 +944,7 @@ export const SEED_CATEGORIES: ServiceCategory[] = [
     verificationTier: 'technical_trade',
     minPayKobo: null,
     maxPayKobo: null,
-    suggestedRateKobo: 650000, // ₦6,500
+    suggestedRateKobo: null,
   },
 ];
 
@@ -1210,9 +1210,7 @@ export const ApiService = {
         verificationTier: (row.verification_tier as VerificationTier) || 'standard',
         minPayKobo: row.min_pay_kobo != null ? Number(row.min_pay_kobo) : null,
         maxPayKobo: row.max_pay_kobo != null ? Number(row.max_pay_kobo) : null,
-        suggestedRateKobo: row.suggested_rate_kobo != null
-          ? Number(row.suggested_rate_kobo)
-          : (row.min_pay_kobo != null ? Number(row.min_pay_kobo) : 350000),
+        suggestedRateKobo: row.suggested_rate_kobo != null ? Number(row.suggested_rate_kobo) : null,
       }));
 
       activeCategoriesCache = mapped;

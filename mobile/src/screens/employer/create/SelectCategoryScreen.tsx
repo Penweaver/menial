@@ -33,7 +33,7 @@ export const SelectCategoryScreen: React.FC<SelectCategoryScreenProps> = ({
       categoryId: cat.id,
       categoryName: cat.name,
       categoryIcon: cat.icon,
-      workerPayKobo: cat.suggestedRateKobo,
+      workerPayKobo: cat.suggestedRateKobo ?? draft.workerPayKobo ?? 350000,
       categoryTier: cat.verificationTier,
       minPayKobo: cat.minPayKobo ?? null,
       maxPayKobo: cat.maxPayKobo ?? null,
@@ -116,9 +116,11 @@ export const SelectCategoryScreen: React.FC<SelectCategoryScreenProps> = ({
                   <Text style={styles.categoryDescription} numberOfLines={2}>
                     {cat.description}
                   </Text>
-                  <Text style={styles.suggestedRateText}>
-                    From {formatKoboToNaira(cat.suggestedRateKobo)}
-                  </Text>
+                  {cat.suggestedRateKobo != null && (
+                    <Text style={styles.suggestedRateText}>
+                      From {formatKoboToNaira(cat.suggestedRateKobo)}
+                    </Text>
+                  )}
                 </View>
                 {isSelected && <Text style={styles.selectedCheck}>✓</Text>}
               </TouchableOpacity>

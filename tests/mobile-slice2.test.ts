@@ -41,7 +41,7 @@ async function runSlice2Tests() {
   const cleaningCat = categories.find((c) => c.id === 'cat_cleaning');
   assert(cleaningCat !== undefined && cleaningCat.name === 'House Cleaning', 'House Cleaning category exists');
   assert(cleaningCat?.suggestedRateKobo === 350000, 'Cleaning suggested rate is 350,000 kobo (₦3,500)');
-  assert(formatKoboToNaira(cleaningCat!.suggestedRateKobo) === '₦3,500', 'formatKoboToNaira formats 350,000 kobo as ₦3,500');
+  assert(formatKoboToNaira(cleaningCat!.suggestedRateKobo!) === '₦3,500', 'formatKoboToNaira formats 350,000 kobo as ₦3,500');
 
   // Test worker onboarding profile submission
   const testBio = 'Experienced residential cleaner and artisan with 5 years experience across Lagos.';
