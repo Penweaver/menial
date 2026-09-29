@@ -39,8 +39,7 @@ export const WorkerActiveJobScreen: React.FC = () => {
   const isCareTier =
     job?.categoryTier === 'care' ||
     job?.categoryId === 'cat_childcare' ||
-    job?.categoryId === 'cat_elderly_care' ||
-    job?.categoryId === 'cat_special_needs';
+    job?.categoryId === 'cat_elderly_care';
 
   const CHECK_IN_INTERVAL_MS = 3 * 3600 * 1000; // 3 hours in ms = 10,800,000 ms (§B.2)
 

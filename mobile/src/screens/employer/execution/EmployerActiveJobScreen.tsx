@@ -36,8 +36,7 @@ export const EmployerActiveJobScreen: React.FC = () => {
   const isCareTier =
     job?.categoryTier === 'care' ||
     job?.categoryId === 'cat_childcare' ||
-    job?.categoryId === 'cat_elderly_care' ||
-    job?.categoryId === 'cat_special_needs';
+    job?.categoryId === 'cat_elderly_care';
 
   const isFirstBookingWithWorker = React.useMemo(() => {
     // If job data is incomplete, default to showing the safeguard (true)

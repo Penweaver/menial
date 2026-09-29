@@ -617,13 +617,13 @@ export interface ServiceCategory {
   suggestedRateKobo: number;
 }
 
-// Master Spec Section A Seed Categories (v3 Taxonomy - 26 Categories)
+// Master Spec & Addendum v3 Seed Categories (Exact mirror of database public.categories table — 32 Categories §26, §A)
 export const SEED_CATEGORIES: ServiceCategory[] = [
-  // --- Standard Tier (15 Categories) ---
+  // --- Section 26 Foundation Categories (13 Standard Tier) ---
   {
     id: 'cat_cleaning',
     name: 'House Cleaning',
-    description: 'Home, office, deep scrubbing, and move-in cleaning',
+    description: 'House cleaning, office cleaning, deep cleaning',
     icon: '🧹',
     verificationTier: 'standard',
     minPayKobo: null,
@@ -632,8 +632,8 @@ export const SEED_CATEGORIES: ServiceCategory[] = [
   },
   {
     id: 'cat_moving',
-    name: 'Moving & Loading',
-    description: 'Heavy lifting, truck loading, and item transfer',
+    name: 'Moving',
+    description: 'Furniture moving, house moving, office relocation',
     icon: '📦',
     verificationTier: 'standard',
     minPayKobo: null,
@@ -641,159 +641,9 @@ export const SEED_CATEGORIES: ServiceCategory[] = [
     suggestedRateKobo: 500000, // ₦5,000
   },
   {
-    id: 'cat_laundry',
-    name: 'Laundry & Ironing',
-    description: 'Hand washing, machine wash, and precision ironing',
-    icon: '👕',
-    verificationTier: 'standard',
-    minPayKobo: null,
-    maxPayKobo: null,
-    suggestedRateKobo: 300000, // ₦3,000
-  },
-  {
-    id: 'cat_gardening',
-    name: 'Gardening & Compound',
-    description: 'Lawn trimming, weeding, and yard maintenance',
-    icon: '🌿',
-    verificationTier: 'standard',
-    minPayKobo: null,
-    maxPayKobo: null,
-    suggestedRateKobo: 400000, // ₦4,000
-  },
-  {
-    id: 'cat_waste',
-    name: 'Waste Removal & Clearing',
-    description: 'Debris clearing, trash disposal, and compound clearing',
-    icon: '🗑️',
-    verificationTier: 'standard',
-    minPayKobo: null,
-    maxPayKobo: null,
-    suggestedRateKobo: 400000, // ₦4,000
-  },
-  {
-    id: 'cat_carwash',
-    name: 'Car Washing',
-    description: 'Vehicle interior and exterior mobile wash',
-    icon: '🚗',
-    verificationTier: 'standard',
-    minPayKobo: null,
-    maxPayKobo: null,
-    suggestedRateKobo: 250000, // ₦2,500
-  },
-  {
-    id: 'cat_errands',
-    name: 'Errands & Grocery Runs',
-    description: 'Market shopping, package delivery, and queue assistance',
-    icon: '🛵',
-    verificationTier: 'standard',
-    minPayKobo: null,
-    maxPayKobo: null,
-    suggestedRateKobo: 300000, // ₦3,000
-  },
-  {
-    id: 'cat_events',
-    name: 'Event Setup & Ushering',
-    description: 'Canopy setup, chair arrangement, and event support',
-    icon: '🎪',
-    verificationTier: 'standard',
-    minPayKobo: null,
-    maxPayKobo: null,
-    suggestedRateKobo: 350000, // ₦3,500
-  },
-  {
-    id: 'cat_painting',
-    name: 'Painting & Surface Prep',
-    description: 'Interior and exterior wall painting and sanding',
-    icon: '🎨',
-    verificationTier: 'standard',
-    minPayKobo: null,
-    maxPayKobo: null,
-    suggestedRateKobo: 500000, // ₦5,000
-  },
-  {
-    id: 'cat_carpentry_repairs',
-    name: 'Carpentry Repairs & Assembly',
-    description: 'Furniture assembly, hinge repairs, and wooden fixture fitting',
-    icon: '🪚',
-    verificationTier: 'standard',
-    minPayKobo: null,
-    maxPayKobo: null,
-    suggestedRateKobo: 450000, // ₦4,500
-  },
-  {
-    id: 'cat_masonry',
-    name: 'Masonry & Plastering Assistance',
-    description: 'Brickwork assistance, mortar mixing, and surface patching',
-    icon: '🧱',
-    verificationTier: 'standard',
-    minPayKobo: null,
-    maxPayKobo: null,
-    suggestedRateKobo: 550000, // ₦5,500
-  },
-  {
-    id: 'cat_tiling',
-    name: 'Tiling Assistance',
-    description: 'Tile cutting assistance, grouting, and cleanup',
-    icon: '📐',
-    verificationTier: 'standard',
-    minPayKobo: null,
-    maxPayKobo: null,
-    suggestedRateKobo: 500000, // ₦5,000
-  },
-  {
-    id: 'cat_roofing',
-    name: 'Roofing & Gutter Maintenance',
-    description: 'Gutter clearing, leak patching, and roof inspection',
-    icon: '🏠',
-    verificationTier: 'standard',
-    minPayKobo: null,
-    maxPayKobo: null,
-    suggestedRateKobo: 600000, // ₦6,000
-  },
-  {
-    id: 'cat_welding',
-    name: 'Welding & Metal Fabrication Support',
-    description: 'Gate repairs, burglar bar welding, and grinder assistance',
-    icon: '⚡',
-    verificationTier: 'standard',
-    minPayKobo: null,
-    maxPayKobo: null,
-    suggestedRateKobo: 550000, // ₦5,500
-  },
-  {
-    id: 'cat_gen_assist',
-    name: 'Generator Servicing Assistance',
-    description: 'Oil changes, spark plug cleaning, and general servicing helper',
-    icon: '⚙️',
-    verificationTier: 'standard',
-    minPayKobo: null,
-    maxPayKobo: null,
-    suggestedRateKobo: 450000, // ₦4,500
-  },
-  {
-    id: 'cat_construction',
-    name: 'Construction Labour',
-    description: 'Construction site assistance, brick carrying, site prep, and general building labour',
-    icon: '🏗️',
-    verificationTier: 'standard',
-    minPayKobo: null,
-    maxPayKobo: null,
-    suggestedRateKobo: 500000, // ₦5,000
-  },
-  {
-    id: 'cat_domestic_help',
-    name: 'Domestic Help',
-    description: 'Household chores, cooking assistance, dishwashing, and home organization',
-    icon: '🏡',
-    verificationTier: 'standard',
-    minPayKobo: null,
-    maxPayKobo: null,
-    suggestedRateKobo: 350000, // ₦3,500
-  },
-  {
     id: 'cat_loading',
-    name: 'Loading & Offloading',
-    description: 'Truck loading, shipping container offloading, and warehouse freight handling',
+    name: 'Loading',
+    description: 'Loading and unloading goods, trucks, containers',
     icon: '🚛',
     verificationTier: 'standard',
     minPayKobo: null,
@@ -801,9 +651,79 @@ export const SEED_CATEGORIES: ServiceCategory[] = [
     suggestedRateKobo: 450000, // ₦4,500
   },
   {
+    id: 'cat_gardening',
+    name: 'Gardening',
+    description: 'Garden maintenance, landscaping, lawn care',
+    icon: '🌿',
+    verificationTier: 'standard',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 400000, // ₦4,000
+  },
+  {
+    id: 'cat_laundry',
+    name: 'Laundry',
+    description: 'Washing, ironing, dry cleaning pickup/delivery',
+    icon: '👕',
+    verificationTier: 'standard',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 300000, // ₦3,000
+  },
+  {
+    id: 'cat_construction',
+    name: 'Construction',
+    description: 'Construction work, general building labour',
+    icon: '🏗️',
+    verificationTier: 'standard',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 500000, // ₦5,000
+  },
+  {
+    id: 'cat_event_helper',
+    name: 'Event Helper',
+    description: 'Event setup, catering assistance, event support',
+    icon: '🎪',
+    verificationTier: 'standard',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 350000, // ₦3,500
+  },
+  {
+    id: 'cat_domestic_help',
+    name: 'Domestic Help',
+    description: 'Household chores, cooking, childcare assistance',
+    icon: '🏡',
+    verificationTier: 'standard',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 350000, // ₦3,500
+  },
+  {
+    id: 'cat_errands',
+    name: 'Errands',
+    description: 'Shopping, deliveries, personal errands',
+    icon: '🛵',
+    verificationTier: 'standard',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 300000, // ₦3,000
+  },
+  {
+    id: 'cat_carwash',
+    name: 'Car Wash',
+    description: 'Vehicle washing, interior cleaning, detailing',
+    icon: '🚗',
+    verificationTier: 'standard',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 250000, // ₦2,500
+  },
+  {
     id: 'cat_general_labour',
     name: 'General Labour',
-    description: 'Miscellaneous manual labour, clearing, shifting, and site helper services',
+    description: 'Miscellaneous physical labour tasks',
     icon: '💪',
     verificationTier: 'standard',
     minPayKobo: null,
@@ -812,8 +732,8 @@ export const SEED_CATEGORIES: ServiceCategory[] = [
   },
   {
     id: 'cat_packing',
-    name: 'Packing & Unpacking',
-    description: 'Household goods packing, fragile box wrapping, and room-by-room unpacking',
+    name: 'Packing/Unpacking',
+    description: 'Packing goods, unpacking at destination, organizing',
     icon: '📦',
     verificationTier: 'standard',
     minPayKobo: null,
@@ -822,8 +742,8 @@ export const SEED_CATEGORIES: ServiceCategory[] = [
   },
   {
     id: 'cat_other',
-    name: 'Other Manual Services',
-    description: 'Manual and artisan tasks not categorized under specific listings',
+    name: 'Other',
+    description: 'Services not covered by other categories',
     icon: '🛠️',
     verificationTier: 'standard',
     minPayKobo: null,
@@ -831,11 +751,133 @@ export const SEED_CATEGORIES: ServiceCategory[] = [
     suggestedRateKobo: 400000, // ₦4,000
   },
 
-  // --- Care Tier (5 Categories) ---
+  // --- Addendum Section A.1 Standard Tier Additions (12 Categories) ---
+  {
+    id: 'cat_ironing',
+    name: 'Ironing/Pressing',
+    description: 'Clothes ironing, steaming, and pressing',
+    icon: '👔',
+    verificationTier: 'standard',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 300000, // ₦3,000
+  },
+  {
+    id: 'cat_warehouse',
+    name: 'Moving / Loading / Warehouse Labour',
+    description: 'Heavy lifting, truck loading/offloading, warehouse logistics',
+    icon: '📦',
+    verificationTier: 'standard',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 500000, // ₦5,000
+  },
+  {
+    id: 'cat_landscaping',
+    name: 'Gardening / Landscaping',
+    description: 'Lawn mowing, flower tending, weed clearance, landscape work',
+    icon: '🌿',
+    verificationTier: 'standard',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 400000, // ₦4,000
+  },
+  {
+    id: 'cat_fumigation',
+    name: 'Fumigation / Pest Control Assistant',
+    description: 'Pest control support, chemical spraying assistance, sanitation',
+    icon: '🪲',
+    verificationTier: 'standard',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 450000, // ₦4,500
+  },
+  {
+    id: 'cat_tank_cleaning',
+    name: 'Gutter & Water Tank Cleaning',
+    description: 'Drainage clearance, water reservoir washing and decontamination',
+    icon: '🚰',
+    verificationTier: 'standard',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 500000, // ₦5,000
+  },
+  {
+    id: 'cat_generator',
+    name: 'Generator Servicing/Cleaning',
+    description: 'Routine generator oil changes, filter cleanup, and surface wipe-down',
+    icon: '⚙️',
+    verificationTier: 'standard',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 450000, // ₦4,500
+  },
+  {
+    id: 'cat_ushering',
+    name: 'Event Helper: Ushering',
+    description: 'Guest reception, ticketing, seat coordination, and hall guidance',
+    icon: '🎟️',
+    verificationTier: 'standard',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 350000, // ₦3,500
+  },
+  {
+    id: 'cat_waitstaff',
+    name: 'Event Helper: Waitstaff / Serving',
+    description: 'Food and beverage serving, table bussing, and hospitality service',
+    icon: '🍽️',
+    verificationTier: 'standard',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 350000, // ₦3,500
+  },
+  {
+    id: 'cat_setup_teardown',
+    name: 'Event Helper: Event Setup & Teardown',
+    description: 'Canopy assembly, chair placement, stage arrangement, and venue pack-down',
+    icon: '🎪',
+    verificationTier: 'standard',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 400000, // ₦4,000
+  },
+  {
+    id: 'cat_gear_loading',
+    name: 'Event Helper: Event Equipment Loading',
+    description: 'Sound system hauling, generator shifting, and stage gear loading',
+    icon: '🚚',
+    verificationTier: 'standard',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 450000, // ₦4,500
+  },
+  {
+    id: 'cat_retail_support',
+    name: 'Retail / Business Support',
+    description: 'Stocktaking, flyer hand-out, inventory counts, and brand promotion labour',
+    icon: '📋',
+    verificationTier: 'standard',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 350000, // ₦3,500
+  },
+  {
+    id: 'cat_farming',
+    name: 'Farm / Smallholding Day Labour',
+    description: 'Planting, weeding, crop harvesting, and manual agricultural assistance',
+    icon: '🌾',
+    verificationTier: 'standard',
+    minPayKobo: null,
+    maxPayKobo: null,
+    suggestedRateKobo: 350000, // ₦3,500
+  },
+
+  // --- Addendum Section A.2 Enhanced Tier — Care Services (2 Categories) ---
   {
     id: 'cat_childcare',
     name: 'Childcare / Babysitting',
-    description: 'Attentive, vetted in-home child supervision and care',
+    description: 'Professional infant, toddler, and after-school child minding',
     icon: '👶',
     verificationTier: 'care',
     minPayKobo: null,
@@ -844,50 +886,20 @@ export const SEED_CATEGORIES: ServiceCategory[] = [
   },
   {
     id: 'cat_elderly_care',
-    name: 'Elderly Care & Companion',
-    description: 'Respectful senior companionship, mobility support, and feeding assistance',
+    name: 'Elderly Care / Companion Care',
+    description: 'Non-medical senior assistance, mobility accompaniment, and daily support',
     icon: '👵',
     verificationTier: 'care',
     minPayKobo: null,
     maxPayKobo: null,
     suggestedRateKobo: 500000, // ₦5,000
   },
-  {
-    id: 'cat_special_needs',
-    name: 'Special Needs Support',
-    description: 'Patient, dedicated care assistance for special needs family members',
-    icon: '🤝',
-    verificationTier: 'care',
-    minPayKobo: null,
-    maxPayKobo: null,
-    suggestedRateKobo: 600000, // ₦6,000
-  },
-  {
-    id: 'cat_post_op',
-    name: 'Post-Operative & Convalescent Care',
-    description: 'Non-clinical home recovery support, meal service, and rest assistance',
-    icon: '🩺',
-    verificationTier: 'care',
-    minPayKobo: null,
-    maxPayKobo: null,
-    suggestedRateKobo: 550000, // ₦5,500
-  },
-  {
-    id: 'cat_pet_care',
-    name: 'Pet Sitting & Dog Walking',
-    description: 'Pet feeding, walking, grooming support, and daytime supervision',
-    icon: '🐕',
-    verificationTier: 'care',
-    minPayKobo: null,
-    maxPayKobo: null,
-    suggestedRateKobo: 300000, // ₦3,000
-  },
 
-  // --- Technical Trade Tier (6 Categories) ---
+  // --- Addendum Section A.3 Enhanced Tier — Technical Trades (5 Categories) ---
   {
     id: 'cat_electrical',
     name: 'Electrical Installation & Repair',
-    description: 'Fault tracing, wiring, socket replacements, and DB panel repairs',
+    description: 'Wiring diagnostics, socket repair, lighting setup, and breaker fixes',
     icon: '💡',
     verificationTier: 'technical_trade',
     minPayKobo: null,
@@ -896,8 +908,8 @@ export const SEED_CATEGORIES: ServiceCategory[] = [
   },
   {
     id: 'cat_plumbing',
-    name: 'Plumbing & Pipefitting',
-    description: 'Pipe leaks, toilet fixture repair, pumping machine, and drainage clearing',
+    name: 'Plumbing',
+    description: 'Pipe installation, leak stoppage, drainage fixes, and tap repair',
     icon: '🔧',
     verificationTier: 'technical_trade',
     minPayKobo: null,
@@ -906,8 +918,8 @@ export const SEED_CATEGORIES: ServiceCategory[] = [
   },
   {
     id: 'cat_ac_repair',
-    name: 'AC & Refrigeration Servicing',
-    description: 'Air conditioner gas refill, compressor checks, and deep cooling servicing',
+    name: 'AC / Refrigeration Servicing & Repair',
+    description: 'Air conditioner gas refilling, coil cleaning, and compressor repair',
     icon: '❄️',
     verificationTier: 'technical_trade',
     minPayKobo: null,
@@ -915,34 +927,24 @@ export const SEED_CATEGORIES: ServiceCategory[] = [
     suggestedRateKobo: 800000, // ₦8,000
   },
   {
-    id: 'cat_solar',
-    name: 'Solar Inverter & Battery Installation',
-    description: 'Inverter configuration, solar panel mounting, and lithium battery setups',
-    icon: '☀️',
+    id: 'cat_welding',
+    name: 'Welding & Fabrication',
+    description: 'Metal gates, burglar bars, structural steel welding, and fence repairs',
+    icon: '⚡',
     verificationTier: 'technical_trade',
     minPayKobo: null,
     maxPayKobo: null,
-    suggestedRateKobo: 1000000, // ₦10,000
+    suggestedRateKobo: 700000, // ₦7,000
   },
   {
-    id: 'cat_gen_overhaul',
-    name: 'Generator Mechanical Overhaul',
-    description: 'Heavy generator ring replacement, carburetor tuning, and engine overhauls',
-    icon: '🔩',
+    id: 'cat_carpentry',
+    name: 'Carpentry & Joinery',
+    description: 'Roof trusses, structural woodwork, door hanging, and cabinetry repairs',
+    icon: '🪚',
     verificationTier: 'technical_trade',
     minPayKobo: null,
     maxPayKobo: null,
-    suggestedRateKobo: 850000, // ₦8,500
-  },
-  {
-    id: 'cat_cctv',
-    name: 'CCTV & Security System Installation',
-    description: 'IP camera cabling, DVR/NVR configuration, and remote feed setup',
-    icon: '📹',
-    verificationTier: 'technical_trade',
-    minPayKobo: null,
-    maxPayKobo: null,
-    suggestedRateKobo: 900000, // ₦9,000
+    suggestedRateKobo: 650000, // ₦6,500
   },
 ];
 
